@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import AddButton from "@/components/AddButton";
+import CartBar from "@/components/CartBar";
 
 async function Menu({ outletId }: { outletId: string }) {
   const { data: outlet } = await supabase
@@ -46,6 +48,7 @@ async function Menu({ outletId }: { outletId: string }) {
                 <div className="text-right">
                   <p className="font-medium">₹{price}</p>
                   {!r.is_available && <p className="text-xs text-neutral-500">Out of stock</p>}
+                  <AddButton outletId={outletId} itemId={m.id} name={m.name} price={price} disabled={!r.is_available} />
                 </div>
               </div>
             </li>
@@ -63,6 +66,7 @@ export default function MenuPage({ params }: { params: Promise<{ outletId: strin
       <Suspense fallback={<p className="mt-6 text-neutral-500">Loading menu...</p>}>
         <MenuLoader params={params} />
       </Suspense>
+      <CartBar />
     </main>
   );
 }
