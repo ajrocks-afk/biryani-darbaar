@@ -1,6 +1,7 @@
 "use server";
 import { supabase } from "@/lib/supabase";
 import { calcTotals, type Coupon } from "@/lib/pricing";
+import { estimatePrepMinutes, promisedMinutes } from "@/lib/prep";
 
 export async function checkCoupon(code: string): Promise<{ coupon?: Coupon; error?: string }> {
   const clean = code.trim().toUpperCase();
@@ -45,7 +46,7 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
   for (const r of (rows ?? []) as any[]) byId.set(r.menu_items.id, r);
 
   let subtotal = 0;
-  const orderLines: { item_id: string; name: string; qty: number; price: number }[] = [];
+  const orderLines: { item_id: string; name: string; qty: number; price: number; baseMinutes: number }[] = [];
   for (const l of input.lines) {
     const r = byId.get(l.itemId);
     if (!r) return { error: "An item is not sold at this outlet" };
@@ -53,7 +54,7 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
     const price = r.menu_items.item_prices?.[0]?.price_inr;
     if (!price) return { error: "Price missing for an item" };
     subtotal += price * l.qty;
-    orderLines.push({ item_id: l.itemId, name: r.menu_items.name, qty: l.qty, price });
+    orderLines.push({ item_id: l.itemId, name: r.menu_items.name, qty: l.qty, price , baseMinutes: r.menu_items.base_prep_minutes});
   }
 
   let coupon: Coupon | null = null;
@@ -65,7 +66,18 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
   const t = calcTotals(subtotal, coupon);
 
   // Promised time (simple version for now: outlet minimum; AI estimate comes later)
-  const promisedAt = new Date(Date.now() + outlet.min_prep_minutes * 60_000).toISOString();
+  const { data: active } = await supabase
+    .from("orders")
+    .select("order_items(qty)")
+    .eq("outlet_id", input.outletId)
+    .in("status", ["placed", "preparing"]);
+  const queued = ((active ?? []) as any[]).reduce(
+    (n, o) => n + (o.order_items ?? []).reduce((m: number, i: any) => m + i.qty, 0), 0);
+
+  const estimate = estimatePrepMinutes(
+    orderLines.map((l) => ({ baseMinutes: l.baseMinutes, qty: l.qty })), queued);
+  const promised = promisedMinutes(estimate, outlet.min_prep_minutes);
+  const promisedAt = new Date(Date.now() + promised * 60_000).toISOString();
   const orderNo = `WEB-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const { data: order, error } = await supabase
@@ -82,6 +94,7 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
       gst_included_inr: t.gstIncluded,
       coupon_code: coupon?.code ?? null,
       promised_at: promisedAt,
+      ai_estimate_minutes: estimate,
     })
     .select("id")
     .single();

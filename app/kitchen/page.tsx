@@ -84,6 +84,14 @@ function KitchenScreen() {
     load(outletId);
   }
 
+  async function addTime(o: Order, mins: number) {
+    const newPromise = new Date(new Date(o.promised_at).getTime() + mins * 60_000).toISOString();
+    const { error } = await supabase.from("orders")
+      .update({ promised_at: newPromise, manager_override_minutes: mins }).eq("id", o.id);
+    if (error) setError("Could not extend time");
+    load(outletId);
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     router.replace("/login");
@@ -113,6 +121,7 @@ function KitchenScreen() {
           const minsLeft = Math.ceil((new Date(o.promised_at).getTime() - now) / 60000);
           const late = minsLeft < 0;
           const soon = !late && minsLeft <= 5;
+          const critical = -minsLeft >= 10;
           const bg = late ? "bg-red-700" : soon ? "bg-amber-600" : "bg-neutral-800";
           return (
             <section key={o.id} className={`rounded-2xl p-5 ${bg}`}>
@@ -123,11 +132,18 @@ function KitchenScreen() {
                 </span>
               </div>
               <p className="mt-1 text-sm uppercase tracking-wide opacity-80">{o.status}</p>
+              {critical && <p className="mt-1 font-bold">⚠ 10+ min late: call the customer</p>}
               <ul className="mt-3 space-y-1 text-xl">
                 {o.order_items.map((i, idx) => (
                   <li key={idx}>{i.qty} × {i.name_snapshot}</li>
                 ))}
               </ul>
+              <button
+                onClick={() => addTime(o, 5)}
+                className="mt-4 w-full rounded-xl border border-white/40 py-2 text-lg"
+              >
+                +5 min (tell customer)
+              </button>
               <button
                 onClick={() => advance(o)}
                 className="mt-4 w-full rounded-xl bg-white py-4 text-xl font-bold text-neutral-900"
