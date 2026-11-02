@@ -9,24 +9,26 @@ async function Outlets() {
     .select("id, name, fssai_no, is_cloud_kitchen, delivery_radius_km")
     .order("name");
 
-  if (error) return <p className="text-red-600">Could not load outlets: {error.message}</p>;
-  if (!outlets?.length) return <p className="text-neutral-500">No outlets available right now.</p>;
+  if (error) return <p className="text-red-700">Could not load outlets. Please refresh.</p>;
+  if (!outlets?.length) return <p className="text-ink/60">No outlets are open right now.</p>;
 
   return (
-    <ul className="mt-6 space-y-3">
+    <ul className="space-y-3">
       {outlets.map((o) => (
         <li key={o.id}>
           <Link
             href={`/menu/${o.id}`}
-            className="block rounded-xl border border-neutral-200 p-4 hover:border-neutral-900 transition"
+            className="block rounded-2xl border border-sand bg-white p-5 transition hover:border-maroon hover:shadow-md"
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium">{o.name}</span>
+              <span className="font-display text-lg font-bold">{o.name}</span>
               {o.is_cloud_kitchen && (
-                <span className="text-xs rounded-full bg-neutral-100 px-2 py-0.5">Cloud kitchen</span>
+                <span className="rounded-full bg-saffron/15 px-2.5 py-0.5 text-xs font-medium text-saffron">
+                  Cloud kitchen
+                </span>
               )}
             </div>
-            <p className="mt-1 text-sm text-neutral-500">
+            <p className="mt-1 text-sm text-ink/60">
               Delivers within {o.delivery_radius_km} km · FSSAI {o.fssai_no}
             </p>
           </Link>
@@ -36,15 +38,34 @@ async function Outlets() {
   );
 }
 
+function OutletsSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="h-20 animate-pulse rounded-2xl bg-sand" />
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   return (
-    <main className="mx-auto max-w-md p-6">
+    <main>
       <StaffRedirect />
-      <h1 className="text-3xl font-semibold tracking-tight">Biryani Darbaar</h1>
-      <p className="mt-1 text-neutral-500">Choose your outlet to start ordering.</p>
-      <Suspense fallback={<p className="mt-6 text-neutral-500">Loading outlets...</p>}>
-        <Outlets />
-      </Suspense>
+      <section className="bg-maroon px-5 py-12 text-center text-cream">
+        <h1 className="font-display text-4xl font-bold">Hyderabad's biryani, direct.</h1>
+        <p className="mx-auto mt-3 max-w-sm text-cream/80">
+          Dum-cooked, delivered hot. Order from your nearest outlet.
+        </p>
+      </section>
+      <div className="mx-auto max-w-2xl px-5 py-8">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-ink/60">
+          Choose your outlet
+        </h2>
+        <Suspense fallback={<OutletsSkeleton />}>
+          <Outlets />
+        </Suspense>
+      </div>
     </main>
   );
 }

@@ -7,9 +7,9 @@ import { calcTotals, type Coupon } from "@/lib/pricing";
 import { checkCoupon, placeOrder } from "@/app/actions";
 import { useProfile } from "@/lib/useProfile";
 
-
 export default function CartPage() {
   const router = useRouter();
+  const { profile } = useProfile();
   const { outletId, lines, add, remove, clear, subtotal } = useCart();
   const [code, setCode] = useState("");
   const [coupon, setCoupon] = useState<Coupon | null>(null);
@@ -17,15 +17,18 @@ export default function CartPage() {
   const [method, setMethod] = useState<"upi" | "card">("upi");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const { profile } = useProfile();
 
   const t = calcTotals(subtotal, coupon);
 
   if (lines.length === 0)
     return (
-      <main className="mx-auto max-w-md p-6">
-        <p className="text-neutral-500">Your cart is empty.</p>
-        <Link href="/" className="mt-3 inline-block underline">Browse outlets</Link>
+      <main className="mx-auto max-w-2xl px-5 py-16 text-center">
+        <p className="text-5xl">🍛</p>
+        <h1 className="mt-4 font-display text-2xl font-bold">Your cart is empty</h1>
+        <p className="mt-1 text-ink/60">Pick an outlet and add something delicious.</p>
+        <Link href="/" className="mt-6 inline-block rounded-xl bg-maroon px-6 py-3 font-semibold text-white">
+          Browse outlets
+        </Link>
       </main>
     );
 
@@ -35,7 +38,7 @@ export default function CartPage() {
     if (res.error) { setCoupon(null); setCouponMsg(res.error); return; }
     if (subtotal < (res.coupon!.min_order_inr ?? 0)) {
       setCoupon(null);
-      setCouponMsg(`Minimum order ₹${res.coupon!.min_order_inr}`);
+      setCouponMsg(`Add items worth ₹${res.coupon!.min_order_inr} or more to use this code`);
       return;
     }
     setCoupon(res.coupon!);
@@ -44,7 +47,10 @@ export default function CartPage() {
 
   async function pay() {
     if (!profile) { router.push("/login"); return; }
-    if (profile.role !== "customer") { setError("Staff accounts can't place orders. Sign in as a customer."); return; }
+    if (profile.role !== "customer") {
+      setError("Staff accounts can't place orders. Sign in as a customer.");
+      return;
+    }
     setBusy(true);
     setError("");
     const res = await placeOrder({
@@ -59,21 +65,21 @@ export default function CartPage() {
   }
 
   return (
-    <main className="mx-auto max-w-md p-6 pb-28">
-      <Link href={`/menu/${outletId}`} className="text-sm text-neutral-500">← Back to menu</Link>
-      <h1 className="mt-2 text-2xl font-semibold">Your order</h1>
+    <main className="mx-auto max-w-2xl px-5 py-6 pb-32">
+      <Link href={`/menu/${outletId}`} className="text-sm text-ink/60">← Back to menu</Link>
+      <h1 className="mt-2 font-display text-3xl font-bold">Your order</h1>
 
-      <ul className="mt-4 divide-y divide-neutral-200">
+      <ul className="mt-4 divide-y divide-sand rounded-2xl border border-sand bg-white px-4">
         {lines.map((l) => (
-          <li key={l.itemId} className="flex items-center justify-between py-3">
+          <li key={l.itemId} className="flex items-center justify-between py-4">
             <div>
-              <p className="font-medium">{l.name}</p>
-              <p className="text-sm text-neutral-500">₹{l.price} each</p>
+              <p className="font-semibold">{l.name}</p>
+              <p className="text-sm text-ink/60">₹{l.price} each</p>
             </div>
-            <div className="flex items-center gap-3">
-              <button onClick={() => remove(l.itemId)} className="h-8 w-8 rounded-full border">−</button>
-              <span>{l.qty}</span>
-              <button onClick={() => add(outletId!, { itemId: l.itemId, name: l.name, price: l.price })} className="h-8 w-8 rounded-full border">+</button>
+            <div className="inline-flex items-center gap-1 rounded-lg bg-maroon px-1 py-1 text-white">
+              <button onClick={() => remove(l.itemId)} className="h-7 w-7 text-lg leading-none" aria-label="Remove one">−</button>
+              <span className="w-5 text-center text-sm font-semibold">{l.qty}</span>
+              <button onClick={() => add(outletId!, { itemId: l.itemId, name: l.name, price: l.price })} className="h-7 w-7 text-lg leading-none" aria-label="Add one">+</button>
             </div>
           </li>
         ))}
@@ -84,24 +90,37 @@ export default function CartPage() {
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="Coupon code"
-          className="flex-1 rounded-lg border border-neutral-300 px-3 py-2 uppercase"
+          className="flex-1 rounded-xl border border-sand bg-white px-4 py-3 uppercase outline-none focus:border-maroon"
         />
-        <button onClick={applyCoupon} className="rounded-lg border border-neutral-900 px-4">Apply</button>
+        <button onClick={applyCoupon} className="rounded-xl border border-maroon px-5 font-semibold text-maroon">
+          Apply
+        </button>
       </div>
-      {couponMsg && <p className="mt-1 text-sm text-neutral-500">{couponMsg}</p>}
+      {couponMsg && (
+        <p className={`mt-2 text-sm ${coupon ? "text-green-700" : "text-red-700"}`}>{couponMsg}</p>
+      )}
 
-      <dl className="mt-6 space-y-1 text-sm">
+      <dl className="mt-6 space-y-2 rounded-2xl border border-sand bg-white p-4 text-sm">
         <div className="flex justify-between"><dt>Subtotal</dt><dd>₹{t.subtotal}</dd></div>
-        {t.discount > 0 && <div className="flex justify-between"><dt>Discount</dt><dd>−₹{t.discount}</dd></div>}
-        <div className="flex justify-between text-neutral-500"><dt>Includes 5% GST</dt><dd>₹{t.gstIncluded}</dd></div>
-        <div className="flex justify-between border-t pt-2 text-base font-semibold"><dt>Total</dt><dd>₹{t.total}</dd></div>
+        {t.discount > 0 && (
+          <div className="flex justify-between text-green-700"><dt>Discount</dt><dd>−₹{t.discount}</dd></div>
+        )}
+        <div className="flex justify-between text-ink/60"><dt>Includes 5% GST</dt><dd>₹{t.gstIncluded}</dd></div>
+        <div className="flex justify-between border-t border-sand pt-3 text-lg font-bold">
+          <dt>Total</dt><dd>₹{t.total}</dd>
+        </div>
       </dl>
 
       <fieldset className="mt-6">
-        <legend className="mb-2 text-sm font-medium">Pay with (test mode)</legend>
+        <legend className="mb-2 text-sm font-semibold">Pay with (test mode, no real money)</legend>
         <div className="flex gap-3">
           {(["upi", "card"] as const).map((m) => (
-            <label key={m} className={`flex-1 cursor-pointer rounded-lg border px-4 py-3 text-center ${method === m ? "border-neutral-900 bg-neutral-50" : "border-neutral-300"}`}>
+            <label
+              key={m}
+              className={`flex-1 cursor-pointer rounded-xl border-2 px-4 py-3 text-center font-medium ${
+                method === m ? "border-maroon bg-maroon/5 text-maroon" : "border-sand bg-white"
+              }`}
+            >
               <input type="radio" name="method" className="sr-only" checked={method === m} onChange={() => setMethod(m)} />
               {m === "upi" ? "UPI" : "Card"}
             </label>
@@ -109,12 +128,15 @@ export default function CartPage() {
         </div>
       </fieldset>
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {!profile && (
+        <p className="mt-4 text-sm text-ink/60">You'll be asked to sign in before paying.</p>
+      )}
+      {error && <p className="mt-4 text-sm text-red-700">{error}</p>}
 
       <button
         onClick={pay}
         disabled={busy}
-        className="fixed inset-x-4 bottom-4 mx-auto max-w-md rounded-xl bg-neutral-900 py-3 font-medium text-white disabled:opacity-50"
+        className="fixed inset-x-4 bottom-4 z-10 mx-auto max-w-2xl rounded-2xl bg-maroon py-4 text-lg font-semibold text-white shadow-xl disabled:opacity-50"
       >
         {busy ? "Placing order..." : `Pay ₹${t.total} (test)`}
       </button>

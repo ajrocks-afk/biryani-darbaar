@@ -90,7 +90,7 @@ export default function AdminPage() {
                   className="w-20 rounded border border-neutral-300 px-2 py-1"
                 />
                 <button onClick={() => toggle(m.id, !r.is_available)}
-                  className="w-24 rounded-lg border border-neutral-900 px-3 py-1 text-sm">
+                  className="w-24 rounded-lg border border-maroon px-3 py-1 text-sm">
                   {r.is_available ? "Pause" : "Resume"}
                 </button>
               </div>

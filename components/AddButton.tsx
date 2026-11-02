@@ -12,16 +12,16 @@ export default function AddButton({
     return (
       <button
         onClick={() => add(outletId, { itemId, name, price })}
-        className="mt-2 rounded-lg border border-neutral-900 px-4 py-1.5 text-sm font-medium"
+        className="rounded-lg border border-maroon bg-white px-5 py-1.5 text-sm font-semibold text-maroon transition hover:bg-maroon hover:text-white"
       >
-        Add
+        ADD
       </button>
     );
   return (
-    <div className="mt-2 inline-flex items-center gap-3 rounded-lg bg-neutral-900 px-2 py-1 text-white">
-      <button onClick={() => remove(itemId)} className="px-2 text-lg" aria-label="Remove one">−</button>
-      <span className="text-sm">{qty}</span>
-      <button onClick={() => add(outletId, { itemId, name, price })} className="px-2 text-lg" aria-label="Add one">+</button>
+    <div className="inline-flex items-center gap-1 rounded-lg bg-maroon px-1 py-1 text-white">
+      <button onClick={() => remove(itemId)} className="h-7 w-7 text-lg leading-none" aria-label="Remove one">−</button>
+      <span className="w-5 text-center text-sm font-semibold">{qty}</span>
+      <button onClick={() => add(outletId, { itemId, name, price })} className="h-7 w-7 text-lg leading-none" aria-label="Add one">+</button>
     </div>
   );
 }
