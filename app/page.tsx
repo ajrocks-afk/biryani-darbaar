@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { supabase } from "@/lib/supabase";
+import StaffRedirect from "@/components/StaffRedirect";
 
 async function Outlets() {
   const { data: outlets, error } = await supabase
@@ -38,6 +39,7 @@ async function Outlets() {
 export default function Home() {
   return (
     <main className="mx-auto max-w-md p-6">
+      <StaffRedirect />
       <h1 className="text-3xl font-semibold tracking-tight">Biryani Darbaar</h1>
       <p className="mt-1 text-neutral-500">Choose your outlet to start ordering.</p>
       <Suspense fallback={<p className="mt-6 text-neutral-500">Loading outlets...</p>}>

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import LiveStatus from "@/components/LiveStatus";
 
 async function Order({ params }: { params: Promise<{ orderNo: string }> }) {
   const { orderNo } = await params;
@@ -19,7 +20,7 @@ async function Order({ params }: { params: Promise<{ orderNo: string }> }) {
   return (
     <>
       <p className="text-sm text-neutral-500">Order {o.order_no}</p>
-      <h1 className="mt-1 text-2xl font-semibold capitalize">{o.status.replace("_", " ")}</h1>
+      <LiveStatus orderNo={o.order_no} initial={o.status} />
       <p className="mt-1 text-neutral-500">{outlet?.name} · Promised by {promised}</p>
       <ul className="mt-6 space-y-1">
         {(o.order_items as any[]).map((i, idx) => (

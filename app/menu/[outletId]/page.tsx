@@ -3,6 +3,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import AddButton from "@/components/AddButton";
 import CartBar from "@/components/CartBar";
+import StaffRedirect from "@/components/StaffRedirect";
 
 async function Menu({ outletId }: { outletId: string }) {
   const { data: outlet } = await supabase
@@ -62,6 +63,7 @@ async function Menu({ outletId }: { outletId: string }) {
 export default function MenuPage({ params }: { params: Promise<{ outletId: string }> }) {
   return (
     <main className="mx-auto max-w-md p-6">
+      <StaffRedirect />
       <Link href="/" className="text-sm text-neutral-500">← Change outlet</Link>
       <Suspense fallback={<p className="mt-6 text-neutral-500">Loading menu...</p>}>
         <MenuLoader params={params} />

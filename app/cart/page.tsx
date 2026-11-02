@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { calcTotals, type Coupon } from "@/lib/pricing";
 import { checkCoupon, placeOrder } from "@/app/actions";
+import { useProfile } from "@/lib/useProfile";
+
 
 export default function CartPage() {
   const router = useRouter();
@@ -15,6 +17,7 @@ export default function CartPage() {
   const [method, setMethod] = useState<"upi" | "card">("upi");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const { profile } = useProfile();
 
   const t = calcTotals(subtotal, coupon);
 
@@ -40,6 +43,8 @@ export default function CartPage() {
   }
 
   async function pay() {
+    if (!profile) { router.push("/login"); return; }
+    if (profile.role !== "customer") { setError("Staff accounts can't place orders. Sign in as a customer."); return; }
     setBusy(true);
     setError("");
     const res = await placeOrder({
