@@ -19,12 +19,12 @@ export default function Header() {
   return (
     <header className="border-b border-sand bg-cream">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-5 py-3">
-        <Link href="/" className="font-display text-xl font-bold text-maroon">
+        <Link href="/" className="font-display text-xl font-bold text-emerald">
           Biryani Darbaar
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           {loading ? null : !profile ? (
-            <Link href="/login" className="font-medium text-maroon">Sign in</Link>
+            <Link href="/login" className="font-medium text-emerald">Sign in</Link>
           ) : (
             <>
               {profile.role === "admin" && <Link href="/admin" className="text-ink/70">Menu</Link>}

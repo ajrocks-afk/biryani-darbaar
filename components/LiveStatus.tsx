@@ -49,7 +49,7 @@ export default function LiveStatus({
         {STEPS.map((s, i) => (
           <li key={s.key} className="flex items-center gap-3">
             <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${
-              i < current ? "bg-maroon text-white" : i === current ? "bg-saffron text-white" : "bg-sand text-ink/40"
+              i < current ? "bg-emerald text-white" : i === current ? "bg-saffron text-white" : "bg-sand text-ink/40"
             }`}>
               {i < current ? "✓" : i + 1}
             </span>

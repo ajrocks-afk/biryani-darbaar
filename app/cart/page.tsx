@@ -26,7 +26,7 @@ export default function CartPage() {
         <p className="text-5xl">🍛</p>
         <h1 className="mt-4 font-display text-2xl font-bold">Your cart is empty</h1>
         <p className="mt-1 text-ink/60">Pick an outlet and add something delicious.</p>
-        <Link href="/" className="mt-6 inline-block rounded-xl bg-maroon px-6 py-3 font-semibold text-white">
+        <Link href="/" className="mt-6 inline-block rounded-xl bg-emerald px-6 py-3 font-semibold text-white">
           Browse outlets
         </Link>
       </main>
@@ -76,7 +76,7 @@ export default function CartPage() {
               <p className="font-semibold">{l.name}</p>
               <p className="text-sm text-ink/60">₹{l.price} each</p>
             </div>
-            <div className="inline-flex items-center gap-1 rounded-lg bg-maroon px-1 py-1 text-white">
+            <div className="inline-flex items-center gap-1 rounded-lg bg-emerald px-1 py-1 text-white">
               <button onClick={() => remove(l.itemId)} className="h-7 w-7 text-lg leading-none" aria-label="Remove one">−</button>
               <span className="w-5 text-center text-sm font-semibold">{l.qty}</span>
               <button onClick={() => add(outletId!, { itemId: l.itemId, name: l.name, price: l.price })} className="h-7 w-7 text-lg leading-none" aria-label="Add one">+</button>
@@ -90,9 +90,9 @@ export default function CartPage() {
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="Coupon code"
-          className="flex-1 rounded-xl border border-sand bg-white px-4 py-3 uppercase outline-none focus:border-maroon"
+          className="flex-1 rounded-xl border border-sand bg-white px-4 py-3 uppercase outline-none focus:border-emerald"
         />
-        <button onClick={applyCoupon} className="rounded-xl border border-maroon px-5 font-semibold text-maroon">
+        <button onClick={applyCoupon} className="rounded-xl border border-emerald px-5 font-semibold text-emerald">
           Apply
         </button>
       </div>
@@ -118,7 +118,7 @@ export default function CartPage() {
             <label
               key={m}
               className={`flex-1 cursor-pointer rounded-xl border-2 px-4 py-3 text-center font-medium ${
-                method === m ? "border-maroon bg-maroon/5 text-maroon" : "border-sand bg-white"
+                method === m ? "border-emerald bg-emerald/5 text-emerald" : "border-sand bg-white"
               }`}
             >
               <input type="radio" name="method" className="sr-only" checked={method === m} onChange={() => setMethod(m)} />
@@ -136,7 +136,7 @@ export default function CartPage() {
       <button
         onClick={pay}
         disabled={busy}
-        className="fixed inset-x-4 bottom-4 z-10 mx-auto max-w-2xl rounded-2xl bg-maroon py-4 text-lg font-semibold text-white shadow-xl disabled:opacity-50"
+        className="fixed inset-x-4 bottom-4 z-10 mx-auto max-w-2xl rounded-2xl bg-emerald py-4 text-lg font-semibold text-white shadow-xl disabled:opacity-50"
       >
         {busy ? "Placing order..." : `Pay ₹${t.total} (test)`}
       </button>

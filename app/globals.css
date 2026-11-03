@@ -1,13 +1,22 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-cream: #fbf6ee;
-  --color-ink: #231815;
-  --color-maroon: #7a1f1a;
-  --color-maroon-dark: #5e1713;
-  --color-saffron: #d98a1c;
-  --color-line: #eadfce;
-  --color-muted: #7a6e64;
+  /* Customer + admin */
+  --color-cream: #f7f1e5;
+  --color-ink: #29251f;
+  --color-emerald: #183c32;
+  --color-emerald-dark: #10291f;
+  --color-saffron: #c99a45;
+  --color-terracotta: #8e352c;
+  --color-sand: #e9dfc9;
+
+  /* Kitchen */
+  --color-kitchen: #202822;
+  --color-kcard: #303b33;
+  --color-ok: #31966a;
+  --color-wait: #e1a33c;
+  --color-urgent: #d9534f;
+
   --font-sans: var(--font-inter);
   --font-display: var(--font-playfair);
 }

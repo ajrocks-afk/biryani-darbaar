@@ -18,12 +18,12 @@ async function Outlets() {
         <li key={o.id}>
           <Link
             href={`/menu/${o.id}`}
-            className="block rounded-2xl border border-sand bg-white p-5 transition hover:border-maroon hover:shadow-md"
+            className="block rounded-2xl border border-sand bg-white p-5 transition hover:border-emerald hover:shadow-md"
           >
             <div className="flex items-center justify-between">
               <span className="font-display text-lg font-bold">{o.name}</span>
               {o.is_cloud_kitchen && (
-                <span className="rounded-full bg-saffron/15 px-2.5 py-0.5 text-xs font-medium text-saffron">
+                <span className="rounded-full bg-terracotta/10 px-2.5 py-0.5 text-xs font-medium text-terracotta">
                   Cloud kitchen
                 </span>
               )}
@@ -52,8 +52,8 @@ export default function Home() {
   return (
     <main>
       <StaffRedirect />
-      <section className="bg-maroon px-5 py-12 text-center text-cream">
-        <h1 className="font-display text-4xl font-bold">Hyderabad's biryani, direct.</h1>
+      <section className="bg-emerald px-5 py-12 text-center text-cream">
+        <h1 className="font-display text-4xl font-bold">Hyderabad's biryani , darbaar.</h1>
         <p className="mx-auto mt-3 max-w-sm text-cream/80">
           Dum-cooked, delivered hot. Order from your nearest outlet.
         </p>

@@ -38,7 +38,7 @@ async function Menu({ outletId }: { outletId: string }) {
 
       {cats.map((cat) => (
         <section key={cat} className="mt-8">
-          <h2 className="mb-3 font-display text-xl font-bold text-maroon">{cat}</h2>
+          <h2 className="mb-3 font-display text-xl font-bold text-emerald">{cat}</h2>
           <ul className="space-y-4">
             {groups.get(cat)!.map((r: any) => {
               const m = r.menu_items;

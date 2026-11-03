@@ -36,16 +36,16 @@ export default function LoginPage() {
 
       <input
         type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email"
-        className="mt-6 w-full rounded-xl border border-sand bg-white px-4 py-3 outline-none focus:border-maroon"
+        className="mt-6 w-full rounded-xl border border-sand bg-white px-4 py-3 outline-none focus:border-emerald"
       />
       <input
         type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password"
-        className="mt-3 w-full rounded-xl border border-sand bg-white px-4 py-3 outline-none focus:border-maroon"
+        className="mt-3 w-full rounded-xl border border-sand bg-white px-4 py-3 outline-none focus:border-emerald"
       />
       {error && <p className="mt-3 text-sm text-red-700">{error}</p>}
       <button
         onClick={signIn} disabled={busy}
-        className="mt-4 w-full rounded-xl bg-maroon py-3 font-semibold text-white disabled:opacity-50"
+        className="mt-4 w-full rounded-xl bg-emerald py-3 font-semibold text-white disabled:opacity-50"
       >
         {busy ? "Signing in..." : "Sign in"}
       </button>

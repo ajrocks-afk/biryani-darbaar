@@ -49,7 +49,7 @@ export default function OrderPage({ params }: { params: Promise<{ orderNo: strin
       <Suspense fallback={<div className="h-64 animate-pulse rounded-2xl bg-sand" />}>
         <Order params={params} />
       </Suspense>
-      <Link href="/" className="mt-8 inline-block font-semibold text-maroon">Order again →</Link>
+      <Link href="/" className="mt-8 inline-block font-semibold text-emerald">Order again →</Link>
     </main>
   );
 }
