@@ -33,6 +33,7 @@ function KitchenScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [now, setNow] = useState(0);
   const [error, setError] = useState("");
+  const [outletName, setOutletName] = useState("All outlets");
 
   const load = useCallback(async (oid: string | null) => {
     let q = supabase
@@ -54,6 +55,10 @@ function KitchenScreen() {
         .from("profiles").select("role, outlet_id").eq("id", session.user.id).maybeSingle();
       if (!p || (p.role !== "kitchen" && p.role !== "admin")) { setState("denied"); return; }
       setOutletId(p.outlet_id);
+      if (p.outlet_id) {
+        const { data: ou } = await supabase.from("outlets").select("name").eq("id", p.outlet_id).maybeSingle();
+        if (ou) setOutletName(ou.name);
+      }
       setState("ok");
       load(p.outlet_id);
     })();
@@ -115,7 +120,7 @@ function KitchenScreen() {
       <header className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="font-display text-3xl font-bold">
-            Kitchen · {orders[0]?.outlets?.name ?? "Live orders"}
+            Kitchen · {outletName}
           </h1>
           <p className="text-sm text-white/60">
             <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-ok" />
