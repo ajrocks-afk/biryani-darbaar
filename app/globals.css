@@ -70,3 +70,5 @@ body {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+main { color: var(--color-ink); }

@@ -32,7 +32,7 @@ async function Menu({ outletId }: { outletId: string }) {
 
   return (
     <>
-      <h1 className="font-display text-2xl font-bold">{outlet.name}</h1>
+      <h1 className="font-display text-2xl font-bold text-ink">{outlet.name}</h1>
       <p className="mt-0.5 text-xs text-ink/60">FSSAI {outlet.fssai_no} · All prices include 5% GST</p>
       <MenuClient outletId={outletId} items={items} />
     </>

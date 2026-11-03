@@ -54,7 +54,7 @@ export default function LoginPage() {
         <p className="font-semibold">Demo accounts</p>
         <p className="mt-1 text-ink/60">Tap one to fill the form (password Darbaar@123).</p>
         <div className="mt-3 flex flex-wrap gap-2">
-          {["customer", "kitchen", "admin"].map((r) => (
+          {["customer", "kitchen", "kitchen2", "kitchen3", "admin"].map((r) => (
             <button key={r} onClick={() => fill(`${r}@demo.com`)}
               className="rounded-full bg-sand px-3 py-1 capitalize">{r}</button>
           ))}
