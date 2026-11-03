@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 @theme inline {
-  /* Customer + admin */
   --color-cream: #f7f1e5;
   --color-ink: #29251f;
   --color-emerald: #183c32;
@@ -10,7 +9,6 @@
   --color-terracotta: #8e352c;
   --color-sand: #e9dfc9;
 
-  /* Kitchen */
   --color-kitchen: #202822;
   --color-kcard: #303b33;
   --color-ok: #31966a;
@@ -21,8 +19,54 @@
   --font-display: var(--font-playfair);
 }
 
+html { font-size: 15px; } /* slightly smaller text everywhere */
+
 body {
-  background: var(--color-cream);
-  color: var(--color-ink);
   font-family: var(--font-inter), system-ui, sans-serif;
+  color: var(--color-ink);
+  background-color: var(--color-cream);
+  background-image:
+    radial-gradient(600px circle at 10% 0%, rgba(201, 154, 69, 0.28), transparent 60%),
+    radial-gradient(500px circle at 100% 20%, rgba(24, 60, 50, 0.18), transparent 60%),
+    radial-gradient(500px circle at 30% 100%, rgba(142, 53, 44, 0.14), transparent 60%);
+  background-attachment: fixed;
 }
+
+/* Glassmorphism */
+@utility glass {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 32px rgba(24, 60, 50, 0.08);
+}
+@utility glass-dark {
+  background: rgba(24, 60, 50, 0.72);
+  backdrop-filter: blur(16px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Scrolling photo strip */
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee { animation: marquee 40s linear infinite; }
+
+/* Shiny text */
+@keyframes shine { from { background-position: 150%; } to { background-position: -50%; } }
+.shiny {
+  background: linear-gradient(110deg, rgba(255,255,255,0.65) 40%, #fff 50%, rgba(255,255,255,0.65) 60%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine 3.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee, .shiny { animation: none; }
+}
+
+@keyframes pageFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-fade { animation: pageFade 0.3s ease-out; }
+@media (prefers-reduced-motion: reduce) { .page-fade { animation: none; } }
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }

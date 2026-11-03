@@ -22,7 +22,7 @@ export default function CartPage() {
 
   if (lines.length === 0)
     return (
-      <main className="mx-auto max-w-2xl px-5 py-16 text-center">
+      <main className="mx-auto max-w-md px-5 py-16 text-center">
         <p className="text-5xl">🍛</p>
         <h1 className="mt-4 font-display text-2xl font-bold">Your cart is empty</h1>
         <p className="mt-1 text-ink/60">Pick an outlet and add something delicious.</p>
@@ -65,7 +65,7 @@ export default function CartPage() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-5 py-6 pb-32">
+    <main className="mx-auto max-w-md px-5 py-6 pb-32">
       <Link href={`/menu/${outletId}`} className="text-sm text-ink/60">← Back to menu</Link>
       <h1 className="mt-2 font-display text-3xl font-bold">Your order</h1>
 
@@ -136,7 +136,7 @@ export default function CartPage() {
       <button
         onClick={pay}
         disabled={busy}
-        className="fixed inset-x-4 bottom-4 z-10 mx-auto max-w-2xl rounded-2xl bg-emerald py-4 text-lg font-semibold text-white shadow-xl disabled:opacity-50"
+        className="fixed inset-x-4 bottom-4 z-10 mx-auto max-w-md rounded-2xl bg-emerald py-4 text-lg font-semibold text-white shadow-xl disabled:opacity-50"
       >
         {busy ? "Placing order..." : `Pay ₹${t.total} (test)`}
       </button>

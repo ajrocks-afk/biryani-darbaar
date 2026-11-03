@@ -3,7 +3,9 @@ import { Suspense } from "react";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart";
+import AppShell from "@/components/AppShell";
 import Header from "@/components/Header";
+import BottomNav from "@/components/BottomNav";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
@@ -18,10 +20,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${playfair.variable}`}>
       <body>
         <CartProvider>
-          <Suspense fallback={<div className="h-14 border-b border-sand" />}>
-            <Header />
+          <Suspense fallback={null}>
+            <AppShell>
+              <Header />
+              {children}
+              <BottomNav />
+            </AppShell>
           </Suspense>
-          {children}
         </CartProvider>
       </body>
     </html>

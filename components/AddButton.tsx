@@ -12,16 +12,17 @@ export default function AddButton({
     return (
       <button
         onClick={() => add(outletId, { itemId, name, price })}
-        className="rounded-lg border border-emerald bg-white px-5 py-1.5 text-sm font-semibold text-emerald transition hover:bg-emerald hover:text-white"
+        className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald text-xl text-white shadow-md transition active:scale-90"
+        aria-label={`Add ${name}`}
       >
-        ADD
+        +
       </button>
     );
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg bg-emerald px-1 py-1 text-white">
-      <button onClick={() => remove(itemId)} className="h-7 w-7 text-lg leading-none" aria-label="Remove one">−</button>
+    <div className="inline-flex items-center rounded-full bg-emerald px-1 text-white shadow-md">
+      <button onClick={() => remove(itemId)} className="h-9 w-8 text-lg" aria-label="Remove one">−</button>
       <span className="w-5 text-center text-sm font-semibold">{qty}</span>
-      <button onClick={() => add(outletId, { itemId, name, price })} className="h-7 w-7 text-lg leading-none" aria-label="Add one">+</button>
+      <button onClick={() => add(outletId, { itemId, name, price })} className="h-9 w-8 text-lg" aria-label="Add one">+</button>
     </div>
   );
 }
