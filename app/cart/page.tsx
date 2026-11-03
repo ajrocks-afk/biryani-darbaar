@@ -6,6 +6,8 @@ import { useCart } from "@/lib/cart";
 import { calcTotals, type Coupon } from "@/lib/pricing";
 import { checkCoupon, placeOrder } from "@/app/actions";
 import { useProfile } from "@/lib/useProfile";
+import { supabase } from "@/lib/supabase";
+
 
 export default function CartPage() {
   const router = useRouter();
@@ -53,7 +55,9 @@ export default function CartPage() {
     }
     setBusy(true);
     setError("");
+    const { data: { session } } = await supabase.auth.getSession();
     const res = await placeOrder({
+      accessToken: session?.access_token ?? "",
       outletId: outletId!,
       lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty })),
       couponCode: coupon?.code,

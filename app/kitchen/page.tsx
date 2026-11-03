@@ -3,7 +3,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-type Status = "placed" | "preparing" | "ready";
+type Status = "placed" | "preparing" | "ready" | "handed_off";
 type Order = {
   id: string;
   order_no: string;
@@ -18,12 +18,14 @@ const NEXT = {
   placed: { to: "preparing", label: "Accept & start" },
   preparing: { to: "ready", label: "Mark ready" },
   ready: { to: "handed_off", label: "Handed to rider" },
+  handed_off: { to: "delivered", label: "Mark delivered" },
 } as const;
 
 const COLUMNS: { key: Status; title: string }[] = [
   { key: "placed", title: "New" },
   { key: "preparing", title: "Preparing" },
   { key: "ready", title: "Ready" },
+  { key: "handed_off", title: "Out for delivery" },
 ];
 
 function KitchenScreen() {
@@ -39,7 +41,7 @@ function KitchenScreen() {
     let q = supabase
       .from("orders")
       .select("id, order_no, status, placed_at, promised_at, outlets(name), order_items(name_snapshot, qty)")
-      .in("status", ["placed", "preparing", "ready"])
+      .in("status", ["placed", "preparing", "ready", "handed_off"])
       .order("placed_at");
     if (oid) q = q.eq("outlet_id", oid);
     const { data, error } = await q;
@@ -119,9 +121,7 @@ function KitchenScreen() {
     <main className="min-h-screen bg-kitchen p-4 text-white">
       <header className="mb-4 flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl font-bold">
-            Kitchen · {outletName}
-          </h1>
+          <h1 className="font-display text-3xl font-bold">Kitchen · {outletName}</h1>
           <p className="text-sm text-white/60">
             <span className="mr-2 inline-block h-2 w-2 animate-pulse rounded-full bg-ok" />
             LIVE · {orders.length} active order{orders.length === 1 ? "" : "s"}
@@ -137,7 +137,7 @@ function KitchenScreen() {
         </p>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-4">
         {COLUMNS.map((col) => {
           const list = orders.filter((o) => o.status === col.key);
           return (
@@ -153,22 +153,25 @@ function KitchenScreen() {
                   const late = minsLeft < 0;
                   const soon = !late && minsLeft <= 5;
                   const critical = -minsLeft >= 10;
-                  const bg = late ? "bg-urgent" : soon ? "bg-wait text-kitchen" : "bg-kcard";
+                  const done = col.key === "handed_off";
+                  const bg = done ? "bg-kcard" : late ? "bg-urgent" : soon ? "bg-wait text-kitchen" : "bg-kcard";
                   return (
                     <article key={o.id} className={`rounded-2xl p-5 ${bg}`}>
                       <div className="flex items-baseline justify-between">
                         <h3 className="text-2xl font-bold">{o.order_no}</h3>
-                        <span className="text-xl font-bold">
-                          {late ? `LATE ${-minsLeft} min` : `${minsLeft} min`}
-                        </span>
+                        {!done && (
+                          <span className="text-xl font-bold">
+                            {late ? `LATE ${-minsLeft} min` : `${minsLeft} min`}
+                          </span>
+                        )}
                       </div>
-                      {critical && <p className="mt-1 font-bold">⚠ 10+ min late: call the customer</p>}
+                      {critical && !done && <p className="mt-1 font-bold">⚠ 10+ min late: call the customer</p>}
                       <ul className="mt-3 space-y-1 text-2xl">
                         {o.order_items.map((i, idx) => (
                           <li key={idx}>{i.qty} × {i.name_snapshot}</li>
                         ))}
                       </ul>
-                      {col.key !== "ready" && (
+                      {(col.key === "placed" || col.key === "preparing") && (
                         <button
                           onClick={() => addTime(o, 5)}
                           className="mt-4 w-full rounded-xl border border-current/40 py-2 text-lg"

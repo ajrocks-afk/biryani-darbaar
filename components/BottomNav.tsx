@@ -30,6 +30,9 @@ export default function BottomNav() {
       <Link href="/#outlets" className={`${item} text-white/70`}>
         <span className="text-lg">📍</span>Outlets
       </Link>
+      <Link href="/orders" className={`${item} ${pathname.startsWith("/orders") ? "text-saffron font-semibold" : "text-white/70"}`}>
+        <span className="text-lg">🧾</span>Orders
+      </Link>
       <Link href="/cart" className={`${item} relative text-white/70`}>
         <span className="text-lg">🛒</span>Cart
         {count > 0 && (
