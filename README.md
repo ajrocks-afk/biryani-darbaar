@@ -2,7 +2,8 @@
 
 > Direct ordering website for a Hyderabadi biryani chain, with a live kitchen display. Order faster, pay less commission, own your customers.
 
-🌐 **Live app:** <<PASTE VERCEL URL HERE>>
+🌐 **Live app:** - https://biryani-darbaar-cvrm.vercel.app
+
 📄 **Setup & demo logins:** see [`deployment.md`](./deployment.md)
 
 ---
