@@ -3,6 +3,7 @@ import { supabaseAdmin as db } from "@/lib/supabaseAdmin";
 import { calcTotals, type Coupon } from "@/lib/pricing";
 import { estimatePrepMinutes, promisedMinutes } from "@/lib/prep";
 import { pickPrize } from "@/lib/prizes";
+import { redeemablePoints, calcTotalsWithPoints } from "@/lib/loyalty";
 
 const METHODS = ["upi", "card", "netbanking", "wallet", "cod"];
 
@@ -10,6 +11,11 @@ async function userFromToken(token?: string) {
   if (!token) return null;
   const { data } = await db.auth.getUser(token);
   return data.user ?? null;
+}
+
+async function pointsBalance(userId: string): Promise<number> {
+  const { data } = await db.from("loyalty_ledger").select("points").eq("customer_id", userId);
+  return (data ?? []).reduce((s: number, r: any) => s + r.points, 0);
 }
 
 type Found = { coupon: Coupon; userCouponId?: string };
@@ -56,6 +62,7 @@ type Input = {
   outletId: string;
   lines: { itemId: string; qty: number }[];
   couponCode?: string;
+  usePoints?: boolean;
   paymentMethod: string;
   paymentProvider?: string;
 };
@@ -112,7 +119,17 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
     coupon = res.coupon;
     userCouponId = res.userCouponId;
   }
-  const t = calcTotals(subtotal, coupon);
+
+  // Loyalty points: the server decides the amount, never the browser
+  let pointsUsed = 0;
+  if (input.usePoints) {
+    if (coupon) return { error: "Points can't be combined with a coupon" };
+    const balance = await pointsBalance(user.id);
+    pointsUsed = redeemablePoints(balance, subtotal, false);
+    if (pointsUsed === 0) return { error: "You can't use points on this order" };
+  }
+
+  const t = pointsUsed > 0 ? calcTotalsWithPoints(subtotal, pointsUsed) : calcTotals(subtotal, coupon);
 
   // 4. Honest promised time: higher of estimate and outlet minimum
   const { data: active } = await db
@@ -143,6 +160,7 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
       total_inr: t.total,
       gst_included_inr: t.gstIncluded,
       coupon_code: coupon?.code ?? null,
+      points_redeemed: pointsUsed,
       promised_at: promisedAt,
       ai_estimate_minutes: estimate,
     })
@@ -159,6 +177,18 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
     await db.from("orders").delete().eq("id", order.id);
     return { error: "Could not place order. Please try again." };
   }
+
+  // Spend the points last. If this fails, undo the order so nothing is half done.
+  if (pointsUsed > 0) {
+    const { error: rErr } = await db.rpc("redeem_points", {
+      p_user: user.id, p_order: order.id, p_points: pointsUsed,
+    });
+    if (rErr) {
+      await db.from("orders").delete().eq("id", order.id);
+      return { error: "Could not use your points. Please try again." };
+    }
+  }
+
   await db.from("order_events").insert({ order_id: order.id, status: "placed" });
 
   // 5. Mark a reward coupon as used (only if it actually gave a discount)

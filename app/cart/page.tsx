@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { calcTotals, type Coupon } from "@/lib/pricing";
+import { redeemablePoints, calcTotalsWithPoints, MIN_REDEEM_POINTS } from "@/lib/loyalty";
 import { checkCoupon, placeOrder } from "@/app/actions";
 import { myCoupons } from "@/app/rewards";
 import type { Reward } from "@/lib/prizes";
@@ -20,17 +21,23 @@ export default function CartPage() {
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [couponMsg, setCouponMsg] = useState("");
   const [wallet, setWallet] = useState<Reward[]>([]);
+  const [balance, setBalance] = useState(0);
+  const [usePoints, setUsePoints] = useState(false);
   const [sheet, setSheet] = useState(false);
   const [placed, setPlaced] = useState(false);
   const [error, setError] = useState("");
 
-  const t = calcTotals(subtotal, coupon);
+  const redeemable = redeemablePoints(balance, subtotal, coupon !== null);
+  const pointsOff = usePoints ? redeemable : 0;
+  const t = pointsOff > 0 ? calcTotalsWithPoints(subtotal, pointsOff) : calcTotals(subtotal, coupon);
 
   useEffect(() => {
     if (profile?.role !== "customer") return;
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) setWallet(await myCoupons(session.access_token));
+      const { data } = await supabase.from("loyalty_ledger").select("points");
+      setBalance((data ?? []).reduce((s: number, r: any) => s + r.points, 0));
     })();
   }, [profile]);
 
@@ -81,6 +88,7 @@ export default function CartPage() {
       outletId: outletId!,
       lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty })),
       couponCode: coupon?.code,
+      usePoints: pointsOff > 0,
       paymentMethod: method,
       paymentProvider: provider,
     });
@@ -90,6 +98,12 @@ export default function CartPage() {
     router.push(`/order/${res.orderNo}?new=1`);
     return {};
   }
+
+  let pointsHint = "";
+  if (coupon) pointsHint = "Points can't be combined with a coupon";
+  else if (redeemable > 0) pointsHint = `You have ${balance}. Use ${redeemable} points to save ₹${redeemable}`;
+  else if (balance < MIN_REDEEM_POINTS) pointsHint = `You have ${balance}. You need ${MIN_REDEEM_POINTS} to redeem`;
+  else pointsHint = `You have ${balance}. Add more items: points can cover up to 20% of the order`;
 
   return (
     <main className="px-4 pb-32 pt-4">
@@ -142,10 +156,28 @@ export default function CartPage() {
         <p className={`mt-2 text-sm ${coupon ? "text-green-700" : "text-red-700"}`}>{couponMsg}</p>
       )}
 
+      {balance > 0 && (
+        <label className={`glass mt-5 flex items-center justify-between gap-3 rounded-2xl p-4 ${redeemable === 0 ? "opacity-60" : ""}`}>
+          <span>
+            <span className="block text-sm font-semibold">Use Darbaar points</span>
+            <span className="block text-xs text-ink/60">{pointsHint}</span>
+          </span>
+          <input
+            type="checkbox"
+            className="h-6 w-6 accent-emerald"
+            checked={pointsOff > 0}
+            disabled={redeemable === 0}
+            onChange={(e) => setUsePoints(e.target.checked)}
+          />
+        </label>
+      )}
+
       <dl className="glass mt-5 space-y-2 rounded-2xl p-4 text-sm">
         <div className="flex justify-between"><dt>Subtotal</dt><dd>₹{t.subtotal}</dd></div>
         {t.discount > 0 && (
-          <div className="flex justify-between text-green-700"><dt>Discount</dt><dd>−₹{t.discount}</dd></div>
+          <div className="flex justify-between text-green-700">
+            <dt>{pointsOff > 0 ? "Points redeemed" : "Discount"}</dt><dd>−₹{t.discount}</dd>
+          </div>
         )}
         <div className="flex justify-between text-ink/60"><dt>Includes 5% GST</dt><dd>₹{t.gstIncluded}</dd></div>
         <div className="flex justify-between border-t border-sand pt-3 text-base font-bold">

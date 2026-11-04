@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/lib/useProfile";
+import Link from "next/link";
 
 type Row = {
   is_available: boolean;
@@ -62,7 +63,12 @@ export default function AdminPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <h1 className="text-2xl font-semibold">Menu admin</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Menu admin</h1>
+        <Link href="/admin/dashboard" className="rounded-lg border border-emerald px-3 py-1 text-sm font-semibold text-emerald">
+          Dashboard →
+        </Link>
+      </div>
       <p className="text-sm text-neutral-500">Prices include 5% GST. Availability is per outlet.</p>
 
       <select value={outletId} onChange={(e) => setOutletId(e.target.value)}
