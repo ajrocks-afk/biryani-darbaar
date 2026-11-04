@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { burst } from "@/lib/confetti";
+import { fetchOrderLive } from "@/lib/orderStatus";
 
 const STEPS = [
   { key: "placed", label: "Order received" },
@@ -10,6 +10,8 @@ const STEPS = [
   { key: "handed_off", label: "Out for delivery" },
   { key: "delivered", label: "Delivered" },
 ];
+
+type Msg = { id: number; body: string; created_at: string };
 
 function fmt(iso: string) {
   return new Date(iso).toLocaleTimeString("en-IN", {
@@ -22,12 +24,31 @@ export default function LiveStatus({
 }: { orderNo: string; initialStatus: string; initialPromisedAt: string }) {
   const [status, setStatus] = useState(initialStatus);
   const [promisedAt, setPromisedAt] = useState(initialPromisedAt);
-  const [anim, setAnim] = useState(0);
-  const wasDelivered = useRef(initialStatus === "delivered");
+  const [messages, setMessages] = useState<Msg[]>([]);
 
-  const current = Math.max(STEPS.findIndex((s) => s.key === status), 0);
-  const finished = status === "delivered";
+  const refresh = useCallback(async () => {
+    try {
+      const r = await fetchOrderLive(orderNo);
+      if (!r) return;
+      setStatus(r.status);
+      setPromisedAt(r.promisedAt);
+      setMessages(r.messages as Msg[]);
+    } catch {
+      /* keep showing the last known state */
+    }
+  }, [orderNo]);
 
+  const finished = status === "delivered" || status === "cancelled";
+
+  // Backup to realtime: poll every 8 s until the order is finished
+  useEffect(() => {
+    refresh();
+    if (finished) return;
+    const t = setInterval(refresh, 8000);
+    return () => clearInterval(t);
+  }, [refresh, finished]);
+
+  // Instant updates when realtime is allowed through
   useEffect(() => {
     const channel = supabase
       .channel(`order-${orderNo}`)
@@ -37,62 +58,61 @@ export default function LiveStatus({
         (payload) => {
           setStatus((payload.new as any).status);
           setPromisedAt((payload.new as any).promised_at);
+          refresh();
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [orderNo]);
-
-  // Start the line at 0 and let it grow, so the movement is visible on first load too
-  useEffect(() => {
-    const t = setTimeout(() => setAnim(current), 250);
-    return () => clearTimeout(t);
-  }, [current]);
-
-  useEffect(() => {
-    if (status === "delivered" && !wasDelivered.current) {
-      wasDelivered.current = true;
-      burst("scratch");
-    }
-  }, [status]);
+  }, [orderNo, refresh]);
 
   if (status === "cancelled")
     return <h1 className="mt-1 font-display text-3xl font-bold text-red-700">Order cancelled</h1>;
 
+  const current = STEPS.findIndex((s) => s.key === status);
+  const delivered = status === "delivered";
+  const movedLater = new Date(promisedAt).getTime() > new Date(initialPromisedAt).getTime();
+
   return (
     <>
-      <h1 className="mt-1 font-display text-3xl font-bold">{STEPS[current].label}</h1>
-      {!finished && (
+      <h1 className="mt-1 font-display text-3xl font-bold">{STEPS[current]?.label ?? status}</h1>
+      {!delivered && (
         <p className="mt-1 text-ink/60">
           Promised by <span className="font-semibold text-ink">{fmt(promisedAt)}</span>
         </p>
       )}
-
-      <ol className="relative mt-6">
-        <div className="absolute bottom-[14px] left-[13px] top-[14px] w-0.5 bg-sand">
-          <div
-            className="w-full bg-emerald transition-[height] duration-1000 ease-out"
-            style={{ height: `${(anim / (STEPS.length - 1)) * 100}%` }}
-          />
-        </div>
-        {STEPS.map((s, i) => {
-          const done = i < current || finished;
-          const active = i === current && !finished;
-          return (
-            <li key={s.key} className={`relative flex items-start gap-3 ${i < STEPS.length - 1 ? "min-h-[56px]" : "h-[28px]"}`}>
-              <span
-                key={`${s.key}-${done || active}`}
-                className={`z-10 flex h-[28px] w-[28px] items-center justify-center rounded-full text-sm font-bold ${
-                  done ? "pop bg-emerald text-white" : active ? "pop ring bg-saffron text-white" : "bg-sand text-ink/40"
-                }`}
-              >
-                {done ? "✓" : i + 1}
-              </span>
-              <span className={`leading-[28px] ${done || active ? "font-semibold" : "text-ink/40"}`}>{s.label}</span>
-            </li>
-          );
-        })}
+      {!delivered && movedLater && (
+        <p className="mt-3 rounded-xl bg-saffron/25 p-3 text-sm font-semibold text-ink">
+          The kitchen needs a little longer. Your new time is {fmt(promisedAt)}.
+        </p>
+      )}
+      <ol className="mt-6 space-y-4">
+        {STEPS.map((s, i) => (
+          <li key={s.key} className="flex items-center gap-3">
+            <span className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${
+              i < current || delivered ? "bg-emerald text-white" : i === current ? "bg-saffron text-white" : "bg-sand text-ink/40"
+            }`}>
+              {i < current || delivered ? "✓" : i + 1}
+            </span>
+            <span className={i <= current ? "font-semibold" : "text-ink/40"}>{s.label}</span>
+          </li>
+        ))}
       </ol>
+
+      {messages.length > 0 && (
+        <section className="mt-8">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ink/60">
+            Messages (demo WhatsApp)
+          </h2>
+          <ul className="mt-2 space-y-2">
+            {messages.map((m) => (
+              <li key={m.id} className="rounded-xl bg-sand p-3 text-sm">
+                {m.body}
+                <span className="ml-2 text-xs text-ink/50">{fmt(m.created_at)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </>
   );
 }
