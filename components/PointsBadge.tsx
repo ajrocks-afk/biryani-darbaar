@@ -22,7 +22,8 @@ export default function PointsBadge() {
         <p className="font-display text-2xl font-bold text-emerald">{pts}</p>
       </div>
       <p className="max-w-[55%] text-right text-xs text-ink/60">
-      Earn 1 point per ₹20 on delivered orders. Redeem at checkout: 1 point = ₹1, minimum 50, up to 20% of the order.
+      Earn 1 point per ₹20 on delivered orders. 
+      Redeem at checkout: 1 point = ₹1, minimum 50, up to 20% of the order.
       </p>
     </div>
   );
