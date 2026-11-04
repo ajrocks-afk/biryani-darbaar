@@ -1,8 +1,10 @@
 "use client";
 import { Suspense, use, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import LiveStatus from "@/components/LiveStatus";
+import OrderCelebration from "@/components/OrderCelebration";
 
 type OrderRow = {
   order_no: string; status: string; total_inr: number; gst_included_inr: number; promised_at: string;
@@ -11,6 +13,7 @@ type OrderRow = {
 
 function OrderView({ params }: { params: Promise<{ orderNo: string }> }) {
   const { orderNo } = use(params);
+  const isNew = useSearchParams().get("new") === "1";
   const [state, setState] = useState<"loading" | "signin" | "missing" | "ok">("loading");
   const [o, setO] = useState<OrderRow | null>(null);
 
@@ -49,6 +52,7 @@ function OrderView({ params }: { params: Promise<{ orderNo: string }> }) {
 
   return (
     <>
+      {isNew && <OrderCelebration orderNo={o.order_no} />}
       <p className="text-sm text-ink/60">Order {o.order_no} · {o.outlets?.name}</p>
       <LiveStatus orderNo={o.order_no} initialStatus={o.status} initialPromisedAt={o.promised_at} />
       <div className="glass mt-8 rounded-2xl p-4">

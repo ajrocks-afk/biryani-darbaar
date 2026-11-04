@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import RewardsBanner from "@/components/RewardsBanner";
 
 type Row = {
   order_no: string;
@@ -92,7 +93,7 @@ export default function OrdersPage() {
   return (
     <main className="px-4 pb-32 pt-4">
       <h1 className="font-display text-2xl font-bold">My orders</h1>
-
+      <RewardsBanner />
       {state === "loading" && (
         <div className="mt-4 space-y-3">
           {[1, 2, 3].map((i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-sand" />)}
