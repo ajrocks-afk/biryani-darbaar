@@ -40,3 +40,24 @@ describe("calcTotalsWithPoints", () => {
     expect(t.total).toBe(900);
   });
 });
+
+import { tierFor, earnPointsWithTier } from "./loyalty";
+
+describe("tiers", () => {
+  it("starts at Bronze and moves up at 3 and 6 orders", () => {
+    expect(tierFor(0).name).toBe("Bronze");
+    expect(tierFor(2).name).toBe("Bronze");
+    expect(tierFor(3).name).toBe("Silver");
+    expect(tierFor(6).name).toBe("Gold");
+  });
+  it("says how many orders to the next tier", () => {
+    expect(tierFor(1).toNext).toBe(2);
+    expect(tierFor(4).toNext).toBe(2);
+    expect(tierFor(9).toNext).toBe(0);
+  });
+  it("multiplies points by tier, rounded down", () => {
+    expect(earnPointsWithTier(1000, 0)).toBe(50);
+    expect(earnPointsWithTier(1000, 3)).toBe(62);
+    expect(earnPointsWithTier(1000, 6)).toBe(75);
+  });
+});

@@ -2,6 +2,8 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+
 
 type Status = "placed" | "preparing" | "ready" | "handed_off";
 type Order = {
@@ -172,7 +174,10 @@ function KitchenScreen() {
     return (
       <main className="min-h-screen bg-kitchen p-6 text-white">
         <p>This screen is for kitchen staff only.</p>
-        <button onClick={signOut} className="mt-3 underline">Sign out</button>
+        <div className="flex gap-4 text-sm text-white/60">
+          <Link href="/staff/issues" className="underline">Customer issues</Link>
+          <button onClick={signOut} className="underline">Sign out</button>
+        </div>
       </main>
     );
 

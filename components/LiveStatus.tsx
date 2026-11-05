@@ -2,6 +2,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { fetchOrderLive } from "@/lib/orderStatus";
+import RatingPrompt from "@/components/RatingPrompt";
+import ComplaintBot from "@/components/ComplaintBot";
+
 
 const STEPS = [
   { key: "placed", label: "Order received" },
@@ -113,6 +116,8 @@ export default function LiveStatus({
           </ul>
         </section>
       )}
+      {delivered && <RatingPrompt orderNo={orderNo} />}
+      <ComplaintBot orderNo={orderNo} />
     </>
   );
 }

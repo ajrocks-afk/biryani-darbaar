@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart";
 import { calcTotals, type Coupon } from "@/lib/pricing";
-import { redeemablePoints, calcTotalsWithPoints, MIN_REDEEM_POINTS } from "@/lib/loyalty";
 import { checkCoupon, placeOrder } from "@/app/actions";
 import { myCoupons } from "@/app/rewards";
 import type { Reward } from "@/lib/prizes";
@@ -12,6 +11,8 @@ import type { PayMethod } from "@/lib/payment";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/lib/useProfile";
 import PaymentSheet from "@/components/PaymentSheet";
+import { redeemablePoints, calcTotalsWithPoints, MIN_REDEEM_POINTS, earnPoints } from "@/lib/loyalty";
+
 
 export default function CartPage() {
   const router = useRouter();
@@ -184,7 +185,11 @@ export default function CartPage() {
           <dt>Total</dt><dd>₹{t.total}</dd>
         </div>
       </dl>
-
+      {profile?.role === "customer" && (
+        <p className="mt-2 text-xs text-ink/60">
+          You'll earn about {earnPoints(t.total)} Darbaar points when this order is delivered.
+        </p>
+      )}
       {!profile && <p className="mt-4 text-sm text-ink/60">You'll be asked to sign in before paying.</p>}
       {error && <p className="mt-4 text-sm text-red-700">{error}</p>}
 

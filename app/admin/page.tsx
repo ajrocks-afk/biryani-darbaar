@@ -63,11 +63,13 @@ export default function AdminPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Menu admin</h1>
-        <Link href="/admin/dashboard" className="rounded-lg border border-emerald px-3 py-1 text-sm font-semibold text-emerald">
-          Dashboard →
-        </Link>
+        <div className="flex gap-2 text-sm font-semibold text-emerald">
+          <Link href="/admin/dashboard" className="rounded-lg border border-emerald px-3 py-1">Dashboard</Link>
+          <Link href="/staff/issues" className="rounded-lg border border-emerald px-3 py-1">Issues</Link>
+          <Link href="/admin/staff" className="rounded-lg border border-emerald px-3 py-1">Add staff</Link>
+        </div>
       </div>
       <p className="text-sm text-neutral-500">Prices include 5% GST. Availability is per outlet.</p>
 

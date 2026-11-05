@@ -24,3 +24,14 @@ export function calcTotalsWithPoints(subtotal: number, points: number) {
   const net = calcTotals(subtotal - off, null);
   return { subtotal, discount: off, gstIncluded: net.gstIncluded, total: net.total };
 }
+
+// ASSUMPTION: tiers based on delivered orders in the last 90 days
+export function tierFor(delivered90d: number) {
+  if (delivered90d >= 6) return { name: "Gold", multiplier: 1.5, toNext: 0, next: null as string | null };
+  if (delivered90d >= 3) return { name: "Silver", multiplier: 1.25, toNext: 6 - delivered90d, next: "Gold" };
+  return { name: "Bronze", multiplier: 1, toNext: 3 - delivered90d, next: "Silver" };
+}
+
+export function earnPointsWithTier(totalInr: number, delivered90d: number): number {
+  return Math.floor((totalInr / EARN_RUPEES_PER_POINT) * tierFor(delivered90d).multiplier);
+}

@@ -94,6 +94,7 @@ export default function OrdersPage() {
   return (
     <main className="px-4 pb-32 pt-4">
       <h1 className="font-display text-2xl font-bold">My orders</h1>
+      <Link href="/support" className="text-sm font-semibold text-emerald">My help requests →</Link>
       <RewardsBanner />
       <PointsBadge />
       {state === "loading" && (
