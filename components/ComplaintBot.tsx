@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -55,13 +56,14 @@ export default function ComplaintBot({ orderNo }: { orderNo: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-24 right-4 z-30 rounded-full bg-emerald px-4 py-3 text-sm font-semibold text-white shadow-xl"
+        className="mt-8 w-full rounded-2xl border border-emerald bg-white/70 p-4 text-left"
       >
-        Need help?
+        <span className="block text-sm font-semibold">Something wrong with your order?</span>
+        <span className="block text-xs text-ink/60">Chat with our help assistant. It goes straight to the outlet.</span>
       </button>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setOpen(false)}>
+      {open && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50" onClick={() => setOpen(false)}>
           <div
             className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-cream p-4 pb-6"
             onClick={(e) => e.stopPropagation()}
@@ -126,7 +128,8 @@ export default function ComplaintBot({ orderNo }: { orderNo: string }) {
               This is a guided form, not an AI. Your request is read by outlet staff.
             </p>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
