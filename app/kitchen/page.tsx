@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-
 type Status = "placed" | "preparing" | "ready" | "handed_off";
 type Order = {
   id: string;
@@ -13,7 +12,7 @@ type Order = {
   placed_at: string;
   promised_at: string;
   outlets: { name: string } | null;
-  order_items: { name_snapshot: string; qty: number }[];
+  order_items: { name_snapshot: string; qty: number; options_text: string | null }[];
 };
 
 const NEXT = {
@@ -76,7 +75,7 @@ function KitchenScreen() {
   const load = useCallback(async (oid: string | null) => {
     let q = supabase
       .from("orders")
-      .select("id, order_no, status, placed_at, promised_at, outlets(name), order_items(name_snapshot, qty)")
+      .select("id, order_no, status, placed_at, promised_at, outlets(name), order_items(name_snapshot, qty, options_text)")
       .in("status", ["placed", "preparing", "ready", "handed_off"])
       .order("placed_at");
     if (oid) q = q.eq("outlet_id", oid);
@@ -174,7 +173,7 @@ function KitchenScreen() {
     return (
       <main className="min-h-screen bg-kitchen p-6 text-white">
         <p>This screen is for kitchen staff only.</p>
-        <div className="flex gap-4 text-sm text-white/60">
+        <div className="mt-3 flex gap-4 text-sm text-white/60">
           <Link href="/staff/issues" className="underline">Customer issues</Link>
           <button onClick={signOut} className="underline">Sign out</button>
         </div>
@@ -253,7 +252,12 @@ function KitchenScreen() {
 
                       <ul className="mt-3 space-y-1 text-xl font-semibold">
                         {o.order_items.map((i, idx) => (
-                          <li key={idx}>{i.qty} × {i.name_snapshot}</li>
+                          <li key={idx}>
+                            {i.qty} × {i.name_snapshot}
+                            {i.options_text && (
+                              <span className="block text-base font-normal opacity-80">{i.options_text}</span>
+                            )}
+                          </li>
                         ))}
                       </ul>
 

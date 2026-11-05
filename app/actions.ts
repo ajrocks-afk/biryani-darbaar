@@ -4,6 +4,7 @@ import { calcTotals, type Coupon } from "@/lib/pricing";
 import { estimatePrepMinutes, promisedMinutes } from "@/lib/prep";
 import { pickPrize } from "@/lib/prizes";
 import { redeemablePoints, calcTotalsWithPoints } from "@/lib/loyalty";
+import { resolveOptions } from "@/lib/options";
 
 const METHODS = ["upi", "card", "netbanking", "wallet", "cod"];
 
@@ -60,7 +61,7 @@ export async function checkCoupon(code: string, accessToken?: string): Promise<{
 type Input = {
   accessToken: string;
   outletId: string;
-  lines: { itemId: string; qty: number }[];
+  lines: { itemId: string; qty: number; optionIds?: string[] }[];
   couponCode?: string;
   usePoints?: boolean;
   paymentMethod: string;
@@ -79,8 +80,13 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
   if (!METHODS.includes(input.paymentMethod)) return { error: "Choose a payment method" };
   for (const l of input.lines) {
     if (!Number.isInteger(l.qty) || l.qty < 1 || l.qty > 20) return { error: "Invalid quantity" };
+    if (
+      l.optionIds !== undefined &&
+      (!Array.isArray(l.optionIds) || l.optionIds.length > 8 || l.optionIds.some((o) => typeof o !== "string"))
+    )
+      return { error: "Invalid options" };
   }
-  const ids = input.lines.map((l) => l.itemId);
+  const ids = Array.from(new Set(input.lines.map((l) => l.itemId)));
 
   const { data: outlet } = await db
     .from("outlets").select("id, min_prep_minutes").eq("id", input.outletId).maybeSingle();
@@ -89,7 +95,7 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
   // 3. Prices come from the database, never from the browser
   const { data: rows } = await db
     .from("outlet_items")
-    .select("is_available, menu_items(id, name, base_prep_minutes, item_prices(price_inr))")
+    .select("is_available, menu_items(id, name, base_prep_minutes, item_prices(price_inr), item_options(id, kind, name, extra_price_inr))")
     .eq("outlet_id", input.outletId)
     .in("item_id", ids);
 
@@ -97,17 +103,23 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
   for (const r of (rows ?? []) as any[]) byId.set(r.menu_items.id, r);
 
   let subtotal = 0;
-  const orderLines: { item_id: string; name: string; qty: number; price: number; baseMinutes: number }[] = [];
+  const orderLines: {
+    item_id: string; name: string; qty: number; price: number; baseMinutes: number; optionsText: string;
+  }[] = [];
   for (const l of input.lines) {
     const r = byId.get(l.itemId);
     if (!r) return { error: "An item is not sold at this outlet" };
     if (!r.is_available) return { error: `${r.menu_items.name} is out of stock` };
-    const price = r.menu_items.item_prices?.[0]?.price_inr;
-    if (!price) return { error: "Price missing for an item" };
+    const base = r.menu_items.item_prices?.[0]?.price_inr;
+    if (!base) return { error: "Price missing for an item" };
+    // Option prices are re-read from the database, never taken from the browser
+    const sel = resolveOptions(r.menu_items.item_options ?? [], l.optionIds ?? []);
+    if (!sel.ok) return { error: `${r.menu_items.name}: ${sel.error}` };
+    const price = base + sel.extra;
     subtotal += price * l.qty;
     orderLines.push({
       item_id: l.itemId, name: r.menu_items.name, qty: l.qty, price,
-      baseMinutes: r.menu_items.base_prep_minutes,
+      baseMinutes: r.menu_items.base_prep_minutes, optionsText: sel.text,
     });
   }
 
@@ -170,7 +182,12 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
 
   const { error: itemsErr } = await db.from("order_items").insert(
     orderLines.map((l) => ({
-      order_id: order.id, item_id: l.item_id, name_snapshot: l.name, qty: l.qty, unit_price_inr: l.price,
+      order_id: order.id,
+      item_id: l.item_id,
+      name_snapshot: l.name,
+      qty: l.qty,
+      unit_price_inr: l.price,
+      options_text: l.optionsText || null,
     }))
   );
   if (itemsErr) {

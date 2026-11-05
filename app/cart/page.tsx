@@ -13,11 +13,10 @@ import { useProfile } from "@/lib/useProfile";
 import PaymentSheet from "@/components/PaymentSheet";
 import { redeemablePoints, calcTotalsWithPoints, MIN_REDEEM_POINTS, earnPoints } from "@/lib/loyalty";
 
-
 export default function CartPage() {
   const router = useRouter();
   const { profile } = useProfile();
-  const { outletId, lines, add, remove, clear, subtotal } = useCart();
+  const { outletId, lines, inc, remove, clear, subtotal } = useCart();
   const [code, setCode] = useState("");
   const [coupon, setCoupon] = useState<Coupon | null>(null);
   const [couponMsg, setCouponMsg] = useState("");
@@ -87,7 +86,7 @@ export default function CartPage() {
     const res = await placeOrder({
       accessToken: session?.access_token ?? "",
       outletId: outletId!,
-      lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty })),
+      lines: lines.map((l) => ({ itemId: l.itemId, qty: l.qty, optionIds: l.optionIds })),
       couponCode: coupon?.code,
       usePoints: pointsOff > 0,
       paymentMethod: method,
@@ -113,15 +112,16 @@ export default function CartPage() {
 
       <ul className="glass mt-4 divide-y divide-sand rounded-2xl px-4">
         {lines.map((l) => (
-          <li key={l.itemId} className="flex items-center justify-between py-3">
+          <li key={l.key} className="flex items-center justify-between py-3">
             <div>
               <p className="text-sm font-semibold">{l.name}</p>
+              {l.optionsText && <p className="text-xs text-emerald">{l.optionsText}</p>}
               <p className="text-xs text-ink/60">₹{l.price} each</p>
             </div>
             <div className="inline-flex items-center rounded-full bg-emerald px-1 text-white">
-              <button onClick={() => remove(l.itemId)} className="h-8 w-8 text-lg" aria-label="Remove one">−</button>
+              <button onClick={() => remove(l.key)} className="h-8 w-8 text-lg" aria-label="Remove one">−</button>
               <span className="w-5 text-center text-sm font-semibold">{l.qty}</span>
-              <button onClick={() => add(outletId!, { itemId: l.itemId, name: l.name, price: l.price })} className="h-8 w-8 text-lg" aria-label="Add one">+</button>
+              <button onClick={() => inc(l.key)} className="h-8 w-8 text-lg" aria-label="Add one">+</button>
             </div>
           </li>
         ))}

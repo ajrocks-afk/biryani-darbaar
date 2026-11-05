@@ -10,7 +10,7 @@ async function Menu({ outletId }: { outletId: string }) {
     supabase.from("outlets").select("name, fssai_no").eq("id", outletId).maybeSingle(),
     supabase
       .from("outlet_items")
-      .select("is_available, menu_items(id, name, description, photo_url, category, is_veg, spice_level, allergens, item_prices(price_inr))")
+      .select("is_available, menu_items(id, name, description, photo_url, category, is_veg, spice_level, allergens, item_prices(price_inr), item_options(id, kind, name, extra_price_inr))")
       .eq("outlet_id", outletId),
   ]);
 
@@ -27,6 +27,7 @@ async function Menu({ outletId }: { outletId: string }) {
     spice_level: r.menu_items.spice_level ?? 0,
     allergens: r.menu_items.allergens ?? [],
     price: r.menu_items.item_prices?.[0]?.price_inr ?? 0,
+    options: r.menu_items.item_options ?? [],
     available: r.is_available,
   }));
 

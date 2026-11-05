@@ -2,11 +2,14 @@
 import { useMemo, useState } from "react";
 import AddButton from "@/components/AddButton";
 import FoodImage from "@/components/FoodImage";
+import OptionSheet from "@/components/OptionSheet";
+import type { Option } from "@/lib/options";
 
 export type MenuEntry = {
   id: string; name: string; description: string | null; photo_url: string | null;
   category: string; is_veg: boolean; spice_level: number; allergens: string[];
   price: number; available: boolean;
+  options?: Option[];
 };
 
 const BESTSELLERS = ["Chicken Dum Biryani", "Mutton Dum Biryani", "Mutton Haleem"]; // assumption
@@ -14,6 +17,7 @@ const BESTSELLERS = ["Chicken Dum Biryani", "Mutton Dum Biryani", "Mutton Haleem
 export default function MenuClient({ outletId, items }: { outletId: string; items: MenuEntry[] }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
+  const [sheetItem, setSheetItem] = useState<MenuEntry | null>(null);
 
   const cats = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
 
@@ -91,10 +95,17 @@ export default function MenuClient({ outletId, items }: { outletId: string; item
                   </div>
                   <div className="mt-1 flex items-center justify-between">
                     <span className="font-semibold">₹{m.price}</span>
-                    {m.available ? (
-                      <AddButton outletId={outletId} itemId={m.id} name={m.name} price={m.price} />
-                    ) : (
+                    {!m.available ? (
                       <span className="text-xs font-medium text-ink/50">Out of stock</span>
+                    ) : (m.options?.length ?? 0) > 0 ? (
+                      <button
+                        onClick={() => setSheetItem(m)}
+                        className="rounded-full bg-emerald px-4 py-2 text-xs font-semibold text-white shadow-md active:scale-95"
+                      >
+                        Customise +
+                      </button>
+                    ) : (
+                      <AddButton outletId={outletId} itemId={m.id} name={m.name} price={m.price} />
                     )}
                   </div>
                 </div>
@@ -103,6 +114,8 @@ export default function MenuClient({ outletId, items }: { outletId: string; item
           </ul>
         </section>
       ))}
+
+      {sheetItem && <OptionSheet outletId={outletId} item={sheetItem} onClose={() => setSheetItem(null)} />}
     </>
   );
 }
