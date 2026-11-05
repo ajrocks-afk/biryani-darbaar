@@ -56,10 +56,14 @@ export default function ComplaintBot({ orderNo }: { orderNo: string }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="mt-8 w-full rounded-2xl border border-emerald bg-white/70 p-4 text-left"
+        className="mt-8 flex w-full items-center gap-3 rounded-2xl bg-emerald p-4 text-left text-white shadow-lg ring-2 ring-saffron/60"
       >
-        <span className="block text-sm font-semibold">Something wrong with your order?</span>
-        <span className="block text-xs text-ink/60">Chat with our help assistant. It goes straight to the outlet.</span>
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 text-2xl">💬</span>
+        <span className="flex-1">
+          <span className="block font-display text-base font-bold">Something wrong with your order?</span>
+          <span className="block text-xs text-white/75">Chat with us. Your message goes straight to the outlet.</span>
+        </span>
+        <span className="rounded-full bg-saffron px-3 py-1.5 text-xs font-bold text-kitchen">Get help</span>
       </button>
 
       {open && createPortal(
