@@ -41,7 +41,7 @@ export default function ScratchModal({
     const y = (e.clientY - r.top) * (H / r.height);
     ctx.globalCompositeOperation = "destination-out";
     ctx.beginPath();
-    ctx.arc(x, y, 20, 0, Math.PI * 2);
+    ctx.arc(x, y, 34, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -57,13 +57,18 @@ export default function ScratchModal({
     return cleared / total;
   }
 
-  async function check() {
-    if (done.current || clearedShare() < 0.45) return;
+  async function reveal() {
+    if (done.current) return;
     done.current = true;
     setRevealed(true);
     burst("scratch");
     const { data: { session } } = await supabase.auth.getSession();
     if (session) await revealReward(session.access_token, reward.id);
+  }
+
+  function check() {
+    if (done.current || clearedShare() < 0.25) return;
+    reveal();
   }
 
   async function copy() {
@@ -107,7 +112,7 @@ export default function ScratchModal({
             onPointerMove={(e) => {
               if (!drawing.current) return;
               scratchAt(e);
-              if (++moves.current % 10 === 0) check();
+              if (++moves.current % 5 === 0) check();
             }}
             onPointerUp={() => { drawing.current = false; check(); }}
           />
@@ -126,7 +131,12 @@ export default function ScratchModal({
             </div>
           </>
         ) : (
-          <button onClick={() => onClose(false)} className="mt-4 text-sm text-ink/60">Maybe later</button>
+          <>
+            <button onClick={reveal} className="mt-4 w-full rounded-xl bg-saffron py-3 text-sm font-bold text-kitchen">
+              Reveal now
+            </button>
+            <button onClick={() => onClose(false)} className="mt-3 text-sm text-ink/60">Maybe later</button>
+          </>
         )}
       </div>
     </div>
