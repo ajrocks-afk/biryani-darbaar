@@ -87,7 +87,7 @@ Names only. Never commit values. `.env.local` is git-ignored, and `.env.example`
 ## 4. Database setup (Supabase)
 
 1. **Create a project** at supabase.com.
-2. **Run the SQL** in the `supabase/` folder using the SQL Editor, in the order listed there: schema first, then seed data, then the feature scripts. Run each file as a separate query.
+2. **Run the SQL** in `supabase/` using the SQL Editor, one file per query, in this order: `schema.sql`, `seed.sql`, `features.sql`, `rls.sql`, then (optional) `demo_history.sql`.
 3. **Create the demo users** under **Authentication → Users → Add user**, with "Auto Confirm User" ticked and password `Darbaar@123`:
    `customer@demo.com`, `kitchen@demo.com`, `kitchen2@demo.com`, `kitchen3@demo.com`, `admin@demo.com`.
    Then run the `profiles` insert statements at the bottom of `seed.sql`, which assign each user a role and an outlet.
