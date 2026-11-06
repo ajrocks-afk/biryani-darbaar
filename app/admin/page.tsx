@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/lib/useProfile";
 import Link from "next/link";
+import AdminNav from "@/components/AdminNav";
+
 
 type Row = {
   is_available: boolean;
@@ -63,6 +65,7 @@ export default function AdminPage() {
 
   return (
     <main className="mx-auto max-w-2xl p-6">
+      <AdminNav current="/admin" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-semibold">Menu admin</h1>
         <div className="flex gap-2 text-sm font-semibold text-emerald">

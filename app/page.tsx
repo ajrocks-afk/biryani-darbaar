@@ -159,7 +159,16 @@ export default function Home() {
             ))}
           </div>
         </Reveal>
-
+        <Reveal className="mt-6">
+          <Link href="/party" className="glass flex items-center gap-3 rounded-2xl p-4">
+            <span className="text-3xl">🎉</span>
+            <span className="flex-1">
+              <span className="block font-display text-base font-bold">Planning a party?</span>
+              <span className="block text-xs text-ink/60">Bulk orders for 10+ guests. Book 48 hours ahead.</span>
+            </span>
+            <span className="text-xl text-emerald">›</span>
+          </Link>
+        </Reveal>
         {/* Outlets */}
         <section id="outlets" className="mt-8 scroll-mt-4">
           <h2 className="mb-3 font-display text-lg font-bold">Choose your outlet</h2>
