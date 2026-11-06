@@ -5,7 +5,6 @@ import { fetchOrderLive } from "@/lib/orderStatus";
 import RatingPrompt from "@/components/RatingPrompt";
 import ComplaintBot from "@/components/ComplaintBot";
 
-
 const STEPS = [
   { key: "placed", label: "Order received" },
   { key: "preparing", label: "Being prepared" },
@@ -28,6 +27,7 @@ export default function LiveStatus({
   const [status, setStatus] = useState(initialStatus);
   const [promisedAt, setPromisedAt] = useState(initialPromisedAt);
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [now, setNow] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
@@ -68,12 +68,23 @@ export default function LiveStatus({
     return () => { supabase.removeChannel(channel); };
   }, [orderNo, refresh]);
 
+  // Clock for the late notice (set in an effect, as Next 16 requires)
+  useEffect(() => {
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
   if (status === "cancelled")
     return <h1 className="mt-1 font-display text-3xl font-bold text-red-700">Order cancelled</h1>;
 
   const current = STEPS.findIndex((s) => s.key === status);
   const delivered = status === "delivered";
   const movedLater = new Date(promisedAt).getTime() > new Date(initialPromisedAt).getTime();
+  const late10 =
+    now > 0 &&
+    ["placed", "preparing", "ready"].includes(status) &&
+    now - new Date(promisedAt).getTime() >= 10 * 60_000;
 
   return (
     <>
@@ -87,6 +98,11 @@ export default function LiveStatus({
         <p className="mt-3 rounded-xl bg-saffron/25 p-3 text-sm font-semibold text-ink">
           The kitchen needs a little longer. Your new time is {fmt(promisedAt)}.
         </p>
+      )}
+      {late10 && (
+        <div className="mt-3 rounded-xl bg-terracotta/10 p-3 text-sm text-terracotta">
+          Sorry, your order is running late. The outlet has been alerted and is working on it.
+        </div>
       )}
       <ol className="mt-6 space-y-4">
         {STEPS.map((s, i) => (

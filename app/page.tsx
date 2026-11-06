@@ -5,6 +5,8 @@ import StaffRedirect from "@/components/StaffRedirect";
 import FoodImage from "@/components/FoodImage";
 import BlurText from "@/components/ui/BlurText";
 import Reveal from "@/components/ui/Reveal";
+import ReorderRow from "@/components/ReorderRow";
+
 
 const CATEGORIES = [
   { label: "Chicken", img: "chicken-biryani" },
@@ -137,7 +139,7 @@ export default function Home() {
             </span>
           </div>
         </Reveal>
-
+        <ReorderRow />
         {/* Bestsellers */}
         <Reveal className="mt-6">
           <h2 className="mb-3 font-display text-lg font-bold">Darbaar's bestsellers</h2>
