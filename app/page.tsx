@@ -6,6 +6,7 @@ import FoodImage from "@/components/FoodImage";
 import BlurText from "@/components/ui/BlurText";
 import Reveal from "@/components/ui/Reveal";
 import ReorderRow from "@/components/ReorderRow";
+import OutletPicker from "@/components/OutletPicker";
 
 
 const CATEGORIES = [
@@ -55,35 +56,12 @@ async function Bestsellers() {
 async function Outlets() {
   const { data: outlets, error } = await supabase
     .from("outlets")
-    .select("id, name, fssai_no, is_cloud_kitchen, delivery_radius_km")
+    .select("id, name, fssai_no, is_cloud_kitchen, delivery_radius_km, lat, lng")
     .order("name");
   if (error) return <p className="text-red-700">Could not load outlets. Please refresh.</p>;
   if (!outlets?.length) return <p className="text-ink/60">No outlets are open right now.</p>;
 
-  return (
-    <ul className="space-y-3">
-      {outlets.map((o, i) => (
-        <li key={o.id}>
-          <Reveal delay={i * 0.06}>
-            <Link href={`/menu/${o.id}`} className="glass flex items-center justify-between rounded-2xl p-4">
-              <div>
-                <p className="font-display text-base font-bold">{o.name}</p>
-                <p className="mt-0.5 text-xs text-ink/60">
-                  {o.delivery_radius_km} km delivery · FSSAI {o.fssai_no}
-                </p>
-                {o.is_cloud_kitchen && (
-                  <span className="mt-1 inline-block rounded-full bg-terracotta/10 px-2 py-0.5 text-[10px] font-medium text-terracotta">
-                    Cloud kitchen
-                  </span>
-                )}
-              </div>
-              <span className="text-xl text-emerald">›</span>
-            </Link>
-          </Reveal>
-        </li>
-      ))}
-    </ul>
-  );
+  return <OutletPicker outlets={outlets as any} />;
 }
 
 const Skeleton = ({ h }: { h: string }) => <div className={`${h} animate-pulse rounded-2xl bg-sand`} />;
