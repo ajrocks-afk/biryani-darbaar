@@ -1,14 +1,16 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AddButton from "@/components/AddButton";
 import FoodImage from "@/components/FoodImage";
 import OptionSheet from "@/components/OptionSheet";
 import type { Option } from "@/lib/options";
+import { inWindow, istMinutes, windowLabel } from "@/lib/menuTime";
 
 export type MenuEntry = {
   id: string; name: string; description: string | null; photo_url: string | null;
   category: string; is_veg: boolean; spice_level: number; allergens: string[];
   price: number; available: boolean;
+  availableFrom: string | null; availableTo: string | null;
   options?: Option[];
 };
 
@@ -18,6 +20,14 @@ export default function MenuClient({ outletId, items }: { outletId: string; item
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
   const [sheetItem, setSheetItem] = useState<MenuEntry | null>(null);
+  const [nowMin, setNowMin] = useState<number | null>(null);
+
+  // Clock is set in an effect (Next 16 rule); refreshed every minute
+  useEffect(() => {
+    setNowMin(istMinutes(new Date()));
+    const t = setInterval(() => setNowMin(istMinutes(new Date())), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   const cats = useMemo(() => ["All", ...Array.from(new Set(items.map((i) => i.category)))], [items]);
 
@@ -66,51 +76,63 @@ export default function MenuClient({ outletId, items }: { outletId: string; item
         <section key={category} className="mt-5">
           <h2 className="mb-2 font-display text-lg font-bold text-emerald">{category}</h2>
           <ul className="space-y-3">
-            {list.map((m) => (
-              <li key={m.id} className="glass flex gap-3 rounded-2xl p-2.5">
-                <div className={`relative h-24 w-24 shrink-0 overflow-hidden rounded-xl ${m.available ? "" : "opacity-40 grayscale"}`}>
-                  <FoodImage src={m.photo_url} alt={m.name} />
-                  {BESTSELLERS.includes(m.name) && (
-                    <span className="absolute left-1 top-1 rounded-full bg-terracotta px-1.5 py-0.5 text-[9px] font-bold text-white">
-                      Bestseller
-                    </span>
-                  )}
-                </div>
-                <div className="flex min-w-0 flex-1 flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span
-                        className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border-2 ${m.is_veg ? "border-green-700" : "border-red-700"}`}
-                        title={m.is_veg ? "Veg" : "Non-veg"}
-                      >
-                        <span className={`h-1.5 w-1.5 rounded-full ${m.is_veg ? "bg-green-700" : "bg-red-700"}`} />
+            {list.map((m) => {
+              const timed = nowMin !== null && !inWindow(m.availableFrom, m.availableTo, nowMin);
+              const blocked = !m.available || timed;
+              const served = windowLabel(m.availableFrom, m.availableTo);
+              return (
+                <li key={m.id} className="glass flex gap-3 rounded-2xl p-2.5">
+                  <div className={`relative h-24 w-24 shrink-0 overflow-hidden rounded-xl ${blocked ? "opacity-40 grayscale" : ""}`}>
+                    <FoodImage src={m.photo_url} alt={m.name} />
+                    {BESTSELLERS.includes(m.name) && (
+                      <span className="absolute left-1 top-1 rounded-full bg-terracotta px-1.5 py-0.5 text-[9px] font-bold text-white">
+                        Bestseller
                       </span>
-                      <h3 className="truncate text-sm font-semibold">{m.name}</h3>
-                    </div>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-ink/60">{m.description}</p>
-                    <p className="mt-0.5 text-[10px] text-ink/50">
-                      {"🌶".repeat(m.spice_level || 0)}
-                      {m.allergens?.length > 0 && ` Contains: ${m.allergens.join(", ")}`}
-                    </p>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between">
-                    <span className="font-semibold">₹{m.price}</span>
-                    {!m.available ? (
-                      <span className="text-xs font-medium text-ink/50">Out of stock</span>
-                    ) : (m.options?.length ?? 0) > 0 ? (
-                      <button
-                        onClick={() => setSheetItem(m)}
-                        className="rounded-full bg-emerald px-4 py-2 text-xs font-semibold text-white shadow-md active:scale-95"
-                      >
-                        Customise +
-                      </button>
-                    ) : (
-                      <AddButton outletId={outletId} itemId={m.id} name={m.name} price={m.price} />
                     )}
                   </div>
-                </div>
-              </li>
-            ))}
+                  <div className="flex min-w-0 flex-1 flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-sm border-2 ${m.is_veg ? "border-green-700" : "border-red-700"}`}
+                          title={m.is_veg ? "Veg" : "Non-veg"}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${m.is_veg ? "bg-green-700" : "bg-red-700"}`} />
+                        </span>
+                        <h3 className="truncate text-sm font-semibold">{m.name}</h3>
+                      </div>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-ink/60">{m.description}</p>
+                      <p className="mt-0.5 text-[10px] text-ink/50">
+                        {"🌶".repeat(m.spice_level || 0)}
+                        {m.allergens?.length > 0 && ` Contains: ${m.allergens.join(", ")}`}
+                      </p>
+                      {served && !timed && (
+                        <p className="mt-0.5 text-[10px] font-medium text-terracotta">Served {served}</p>
+                      )}
+                    </div>
+                    <div className="mt-1 flex items-center justify-between">
+                      <span className="font-semibold">₹{m.price}</span>
+                      {!m.available ? (
+                        <span className="text-xs font-medium text-ink/50">Out of stock</span>
+                      ) : timed ? (
+                        <span className="text-right text-[11px] font-medium text-terracotta">
+                          Available {served}
+                        </span>
+                      ) : (m.options?.length ?? 0) > 0 ? (
+                        <button
+                          onClick={() => setSheetItem(m)}
+                          className="rounded-full bg-emerald px-4 py-2 text-xs font-semibold text-white shadow-md active:scale-95"
+                        >
+                          Customise +
+                        </button>
+                      ) : (
+                        <AddButton outletId={outletId} itemId={m.id} name={m.name} price={m.price} />
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </section>
       ))}

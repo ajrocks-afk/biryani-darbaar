@@ -5,6 +5,7 @@ import { estimatePrepMinutes, promisedMinutes } from "@/lib/prep";
 import { pickPrize } from "@/lib/prizes";
 import { redeemablePoints, calcTotalsWithPoints } from "@/lib/loyalty";
 import { resolveOptions } from "@/lib/options";
+import { inWindow, istMinutes } from "@/lib/menuTime";
 
 const METHODS = ["upi", "card", "netbanking", "wallet", "cod"];
 
@@ -95,12 +96,14 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
   // 3. Prices come from the database, never from the browser
   const { data: rows } = await db
     .from("outlet_items")
-    .select("is_available, menu_items(id, name, base_prep_minutes, item_prices(price_inr), item_options(id, kind, name, extra_price_inr))")
+    .select("is_available, menu_items(id, name, base_prep_minutes, available_from, available_to, item_prices(price_inr), item_options(id, kind, name, extra_price_inr))")
     .eq("outlet_id", input.outletId)
     .in("item_id", ids);
 
   const byId = new Map<string, any>();
   for (const r of (rows ?? []) as any[]) byId.set(r.menu_items.id, r);
+
+  const nowMin = istMinutes(new Date());
 
   let subtotal = 0;
   const orderLines: {
@@ -110,6 +113,9 @@ export async function placeOrder(input: Input): Promise<{ orderNo?: string; erro
     const r = byId.get(l.itemId);
     if (!r) return { error: "An item is not sold at this outlet" };
     if (!r.is_available) return { error: `${r.menu_items.name} is out of stock` };
+    // Time-based menus are enforced here too, so the browser cannot bypass them
+    if (!inWindow(r.menu_items.available_from, r.menu_items.available_to, nowMin))
+      return { error: `${r.menu_items.name} is not available at this time` };
     const base = r.menu_items.item_prices?.[0]?.price_inr;
     if (!base) return { error: "Price missing for an item" };
     // Option prices are re-read from the database, never taken from the browser
