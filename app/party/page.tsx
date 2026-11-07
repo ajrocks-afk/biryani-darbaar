@@ -4,7 +4,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useProfile } from "@/lib/useProfile";
 import { MIN_NOTICE_HOURS, MIN_GUESTS, MAX_GUESTS, validateParty, toLocalInput } from "@/lib/party";
-import { markSeen } from "@/lib/partySeen";
+import ContactButtons from "@/components/ContactButtons";
 
 type Req = {
   id: number; event_at: string; guests: number; status: string;
@@ -29,6 +29,7 @@ export default function PartyPage() {
   const { profile, loading } = useProfile();
   const [outlets, setOutlets] = useState<{ id: string; name: string }[]>([]);
   const [requests, setRequests] = useState<Req[]>([]);
+  const [loadErr, setLoadErr] = useState(false);
   const [minDt, setMinDt] = useState("");
   const [outletId, setOutletId] = useState("");
   const [dt, setDt] = useState("");
@@ -45,14 +46,12 @@ export default function PartyPage() {
   }, []);
 
   const loadRequests = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("party_orders")
       .select("id, event_at, guests, status, manager_note, menu_request, outlets(name, phone)")
       .order("created_at", { ascending: false });
-    const list = (data as any as Req[]) ?? [];
-    setRequests(list);
-    // the customer has now seen every decision, so clear the dot on the Party tab
-    markSeen(list.filter((r) => r.status !== "requested").map((r) => r.id));
+    setLoadErr(!!error);
+    if (!error) setRequests((data as any as Req[]) ?? []);
   }, []);
 
   useEffect(() => {
@@ -63,14 +62,14 @@ export default function PartyPage() {
     });
     loadRequests();
     const t = setInterval(loadRequests, 30_000);
-    return () => clearInterval(t);
+    const h = () => loadRequests(); // the notification system tells us when something changed
+    window.addEventListener("darbaar-inbox", h);
+    return () => { clearInterval(t); window.removeEventListener("darbaar-inbox", h); };
   }, [profile, loadRequests]);
 
   async function submit() {
     setError(""); setDone("");
-    const problem = validateParty({
-      eventAt: new Date(dt), guests: Number(guests), phone, menu,
-    });
+    const problem = validateParty({ eventAt: new Date(dt), guests: Number(guests), phone, menu });
     if (problem) { setError(problem); return; }
     setBusy(true);
     const { error: e } = await supabase.rpc("create_party_order", {
@@ -121,52 +120,40 @@ export default function PartyPage() {
           {confirmedCount > 0 && (
             <div className="mt-4 rounded-2xl bg-emerald p-3 text-sm font-semibold text-white">
               🎉 {confirmedCount === 1 ? "Your party request is confirmed!" : `${confirmedCount} party requests are confirmed!`}
-              {" "}Contact details are below.
             </div>
           )}
 
           <h2 className="mt-6 text-xs font-semibold uppercase tracking-wide text-ink/60">Your requests</h2>
-          {requests.length === 0 && <p className="mt-2 text-sm text-ink/60">No party requests yet.</p>}
+          {loadErr && <p className="mt-2 text-sm text-red-700">Could not load your requests. Please refresh.</p>}
+          {!loadErr && requests.length === 0 && <p className="mt-2 text-sm text-ink/60">No party requests yet.</p>}
           <ul className="mt-2 space-y-3">
-            {requests.map((r) => {
-              const digits = (r.outlets?.phone ?? "").replace(/\D/g, "");
-              return (
-                <li key={r.id}
-                  className={`glass rounded-2xl p-4 ${r.status === "confirmed" ? "ring-2 ring-emerald" : ""}`}>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold">{r.outlets?.name}</span>
-                    <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
-                      r.status === "confirmed" ? "bg-emerald text-white"
-                      : r.status === "declined" ? "bg-urgent/15 text-urgent" : "bg-saffron/25 text-ink"}`}>
-                      {STATUS[r.status]}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-xs text-ink/60">{when(r.event_at)} · {r.guests} guests</p>
-                  <p className="mt-2 text-sm">{r.menu_request}</p>
-                  {r.manager_note && (
-                    <p className="mt-2 rounded-xl bg-sand p-3 text-sm">Catering manager: {r.manager_note}</p>
-                  )}
-                  {r.status === "confirmed" && digits.length === 10 && (
-                    <div className="mt-3">
-                      <p className="text-xs text-ink/60">Questions about your order? Contact the outlet:</p>
-                      <div className="mt-2 flex gap-2">
-                        <a href={`tel:+91${digits}`}
-                          className="flex-1 rounded-xl bg-emerald py-2.5 text-center text-sm font-semibold text-white">
-                          📞 Call +91 {digits}
-                        </a>
-                        <a href={`https://wa.me/91${digits}`} target="_blank" rel="noopener noreferrer"
-                          className="flex-1 rounded-xl border border-emerald py-2.5 text-center text-sm font-semibold text-emerald">
-                          💬 WhatsApp
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                  {r.status === "declined" && (
-                    <p className="mt-2 text-xs text-ink/60">You can send a new request below with a different date or menu.</p>
-                  )}
-                </li>
-              );
-            })}
+            {requests.map((r) => (
+              <li key={r.id} className={`glass rounded-2xl p-4 ${r.status === "confirmed" ? "ring-2 ring-emerald" : ""}`}>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">{r.outlets?.name}</span>
+                  <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                    r.status === "confirmed" ? "bg-emerald text-white"
+                    : r.status === "declined" ? "bg-urgent/15 text-urgent" : "bg-saffron/25 text-ink"}`}>
+                    {STATUS[r.status]}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-ink/60">{when(r.event_at)} · {r.guests} guests</p>
+                <p className="mt-2 text-sm">{r.menu_request}</p>
+                {r.manager_note && (
+                  <p className="mt-2 rounded-xl bg-sand p-3 text-sm">Catering manager: {r.manager_note}</p>
+                )}
+                <ContactButtons
+                  phone={r.outlets?.phone}
+                  label={r.status === "confirmed"
+                    ? "Questions about your order? Contact the outlet:"
+                    : "Have a question? Contact the outlet:"}
+                  message={`Hi Biryani Darbaar ${r.outlets?.name ?? ""}, about my party request on ${when(r.event_at)} for ${r.guests} guests.`}
+                />
+                {r.status === "declined" && (
+                  <p className="mt-2 text-xs text-ink/60">You can send a new request below with a different date or menu.</p>
+                )}
+              </li>
+            ))}
           </ul>
 
           <h2 className="mt-8 text-xs font-semibold uppercase tracking-wide text-ink/60">New request</h2>
@@ -185,7 +172,7 @@ export default function PartyPage() {
                 <input type="number" inputMode="numeric" className={`${field} mt-1`} value={guests}
                   onChange={(e) => setGuests(e.target.value)} />
               </label>
-              <label className="block flex-1 text-xs font-semibold text-ink/60">Mobile number
+              <label className="block flex-1 text-xs font-semibold text-ink/60">Your mobile number
                 <input inputMode="numeric" maxLength={10} className={`${field} mt-1`} value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))} placeholder="9876543210" />
               </label>

@@ -3,9 +3,11 @@ import { Suspense } from "react";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/cart";
+import { InboxProvider } from "@/lib/inbox";
 import AppShell from "@/components/AppShell";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
+import WelcomeGuide from "@/components/WelcomeGuide";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
@@ -21,11 +23,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <CartProvider>
           <Suspense fallback={null}>
-            <AppShell>
-              <Header />
-              {children}
-              <BottomNav />
-            </AppShell>
+            <InboxProvider>
+              <AppShell>
+                <Header />
+                {children}
+                <BottomNav />
+              </AppShell>
+              <WelcomeGuide />
+            </InboxProvider>
           </Suspense>
         </CartProvider>
       </body>

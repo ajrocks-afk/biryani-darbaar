@@ -3,6 +3,9 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import NotificationBell from "@/components/NotificationBell";
+import NavBadge from "@/components/NavBadge";
+
 
 type Status = "placed" | "preparing" | "ready" | "handed_off";
 type Order = {
@@ -199,6 +202,10 @@ function KitchenScreen() {
           </button>
           <button onClick={signOut} className="text-sm text-white/70 underline">Sign out</button>
         </div>
+        <Link href="/staff/issues" className="flex items-center gap-1.5 text-sm text-white/80 underline">
+          Issues <NavBadge kind="ticket" />
+        </Link>
+        <NotificationBell />
       </header>
 
       {error && <p className="mb-3 rounded-lg bg-urgent/20 p-3 text-white">{error}</p>}
