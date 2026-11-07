@@ -109,3 +109,10 @@ end $$;
 
 revoke execute on function admin_create_item(text, text, text, boolean, int, text[], int, int, text, time, time) from public, anon;
 grant execute on function admin_create_item(text, text, text, boolean, int, text[], int, int, text, time, time) to authenticated;
+
+alter table outlets add column if not exists phone text;
+update outlets set phone = case name
+  when 'Kondapur' then '9000000111'
+  when 'Kukatpally' then '9000000222'
+  when 'Gachibowli Cloud Kitchen' then '9000000333'
+  else phone end;

@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart";
 import { useProfile } from "@/lib/useProfile";
+import PartyTab from "@/components/PartyTab";
+
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -33,6 +35,7 @@ export default function BottomNav() {
       <Link href="/orders" className={`${item} ${pathname.startsWith("/orders") ? "text-saffron font-semibold" : "text-white/70"}`}>
         <span className="text-lg">🧾</span>Orders
       </Link>
+      <PartyTab className={item} />
       <Link href="/cart" className={`${item} relative text-white/70`}>
         <span className="text-lg">🛒</span>Cart
         {count > 0 && (
