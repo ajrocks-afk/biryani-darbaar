@@ -28,6 +28,8 @@ export default function LiveStatus({
   const [promisedAt, setPromisedAt] = useState(initialPromisedAt);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [now, setNow] = useState(0);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelErr, setCancelErr] = useState("");
 
   const refresh = useCallback(async () => {
     try {
@@ -75,6 +77,16 @@ export default function LiveStatus({
     return () => clearInterval(t);
   }, []);
 
+  async function cancelOrder() {
+    if (!window.confirm("Cancel this order? This can't be undone.")) return;
+    setCancelBusy(true);
+    setCancelErr("");
+    const { error } = await supabase.rpc("cancel_my_order", { p_order_no: orderNo });
+    setCancelBusy(false);
+    if (error) setCancelErr(error.message);
+    refresh();
+  }
+
   if (status === "cancelled")
     return <h1 className="mt-1 font-display text-3xl font-bold text-red-700">Order cancelled</h1>;
 
@@ -116,7 +128,18 @@ export default function LiveStatus({
           </li>
         ))}
       </ol>
-
+      
+      {status === "placed" && (
+        <div className="mt-6">
+          <button onClick={cancelOrder} disabled={cancelBusy}
+            className="w-full rounded-xl border border-urgent py-3 text-sm font-semibold text-urgent disabled:opacity-50">
+            {cancelBusy ? "Cancelling..." : "Cancel order"}
+          </button>
+          <p className="mt-1 text-center text-[11px] text-ink/50">Only possible until the kitchen accepts your order.</p>
+          {cancelErr && <p className="mt-2 text-center text-sm text-red-700">{cancelErr}</p>}
+        </div>
+      )}
+      
       {messages.length > 0 && (
         <section className="mt-8">
           <h2 className="text-xs font-semibold uppercase tracking-wide text-ink/60">

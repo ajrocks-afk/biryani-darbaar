@@ -19,6 +19,7 @@ const BESTSELLERS = ["Chicken Dum Biryani", "Mutton Dum Biryani", "Mutton Haleem
 export default function MenuClient({ outletId, items }: { outletId: string; items: MenuEntry[] }) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState("All");
+  const [vegOnly, setVegOnly] = useState(false);
   const [sheetItem, setSheetItem] = useState<MenuEntry | null>(null);
   const [nowMin, setNowMin] = useState<number | null>(null);
 
@@ -34,12 +35,12 @@ export default function MenuClient({ outletId, items }: { outletId: string; item
   const groups = useMemo(() => {
     const term = q.trim().toLowerCase();
     const filtered = items.filter(
-      (i) => (cat === "All" || i.category === cat) && (!term || i.name.toLowerCase().includes(term))
+      (i) => (cat === "All" || i.category === cat) && (!term || i.name.toLowerCase().includes(term)) && (!vegOnly || i.is_veg)
     );
     const map = new Map<string, MenuEntry[]>();
     for (const i of filtered) map.set(i.category, [...(map.get(i.category) ?? []), i]);
     return [...map.entries()];
-  }, [items, q, cat]);
+  }, [items, q, cat, vegOnly]);
 
   return (
     <>
@@ -51,6 +52,15 @@ export default function MenuClient({ outletId, items }: { outletId: string; item
           className="w-full rounded-xl border border-sand bg-white/80 px-4 py-2.5 text-sm outline-none focus:border-emerald"
         />
         <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto">
+          <button
+            onClick={() => setVegOnly((v) => !v)}
+            aria-pressed={vegOnly}
+            className={`shrink-0 rounded-full border px-4 py-1.5 text-xs font-semibold ${
+              vegOnly ? "border-green-700 bg-green-700 text-white" : "border-green-700 bg-white/70 text-green-700"
+            }`}
+          >
+            🌿 Veg only
+          </button>
           {cats.map((c) => (
             <button
               key={c}

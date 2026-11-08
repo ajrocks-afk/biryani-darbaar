@@ -141,3 +141,22 @@ end $$;
 drop trigger if exists orders_inbox on orders;
 create trigger orders_inbox after update on orders
   for each row execute function inbox_order_status();
+
+create or replace function cancel_my_order(p_order_no text)
+returns void language plpgsql security definer set search_path = public as $$
+declare o orders%rowtype;
+begin
+  if auth.uid() is null then raise exception 'Please sign in'; end if;
+  select * into o from orders where order_no = p_order_no and customer_id = auth.uid() for update;
+  if not found then raise exception 'Order not found'; end if;
+  if o.status <> 'placed' then
+    raise exception 'The kitchen has already started this order, so it can no longer be cancelled';
+  end if;
+  update orders
+     set status = 'cancelled',
+         payment_status = case when payment_status = 'paid' then 'refunded' else payment_status end
+   where id = o.id;
+  insert into order_events (order_id, status) values (o.id, 'cancelled');
+end $$;
+revoke execute on function cancel_my_order(text) from public, anon;
+grant execute on function cancel_my_order(text) to authenticated;

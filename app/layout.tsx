@@ -8,6 +8,8 @@ import AppShell from "@/components/AppShell";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import WelcomeGuide from "@/components/WelcomeGuide";
+import ActiveOrderPill from "@/components/ActiveOrderPill";
+
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
@@ -28,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Header />
                 {children}
                 <BottomNav />
+                <ActiveOrderPill />
               </AppShell>
               <WelcomeGuide />
             </InboxProvider>
