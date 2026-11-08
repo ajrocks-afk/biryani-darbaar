@@ -1,143 +1,131 @@
-# Biryani Darbaar: Setup and Deployment Notes
+# Biryani Darbaar: deployment notes
 
 - **Live app:** https://biryani-darbaar-cvrm.vercel.app
 - **GitHub:** https://github.com/ajrocks-afk/biryani-darbaar
-- **Stack:** Next.js 16 (App Router, TypeScript), Tailwind CSS, Supabase (PostgreSQL, Auth, Realtime), Vitest, Vercel
 
-All data in this project is fictional. Payments are in test mode and no real money moves.
+## 1. Demo logins for the reviewer
 
----
+All accounts are fictional and exist only for this demo. Password for every account: `Darbaar@123`
 
-## 1. Demo logins (for the reviewer)
-
-The password for every demo account is `Darbaar@123`. On the login page you can also tap a demo name to fill the form.
-
-| Role | Email | What you can do |
+| Role | Email | What it can do |
 |---|---|---|
-| Customer | `customer@demo.com` | Browse outlets, order, pay (test), track live, use points, scratch cards, raise help requests, rate |
-| Kitchen (Kondapur) | `kitchen@demo.com` | Live kitchen board and customer issues for **Kondapur only** |
-| Kitchen (Kukatpally) | `kitchen2@demo.com` | Same, for **Kukatpally only** |
-| Kitchen (Gachibowli Cloud Kitchen) | `kitchen3@demo.com` | Same, for **Gachibowli Cloud Kitchen only** |
-| Admin | `admin@demo.com` | Menu admin, outlet dashboard, customer issues for all outlets, add kitchen staff |
+| Customer | customer@demo.com | Browse, order, pay (test mode), track live, scratch rewards, loyalty points, party requests, issues |
+| Kitchen (Kondapur) | kitchen@demo.com | Kitchen board for the Kondapur outlet only |
+| Kitchen (Kukatpally) | kitchen2@demo.com | Kitchen board for Kukatpally only |
+| Kitchen (Cloud kitchen) | kitchen3@demo.com | Kitchen board for Gachibowli Cloud Kitchen only |
+| Admin | admin@demo.com | Menu and stock, add items, party orders (acts as catering manager), customer issues, dashboard, staff |
 
-**New customers can also create their own account** on the login page (Create account tab). Kitchen and admin accounts cannot be self-registered. An admin creates kitchen accounts under **Admin → Add staff**.
+The login page has buttons that fill these accounts in.
 
-The demo customer starts with 300 loyalty points and shows as Gold tier, because the demo data includes synthetic past orders. A newly created account starts at 0 points and Bronze.
+### Suggested 5-minute walkthrough
 
-### Five-minute review path
-
-1. Open the live app in **three windows**: customer, kitchen (`kitchen@demo.com`), and admin.
-2. As the customer, choose **Kondapur**, add items to the cart, and pay with test card `4111 1111 1111 1111` (any future expiry, any 3-digit CVV).
-3. Watch the order appear on the kitchen board **without refreshing**. Press **Accept & start**, then **+5 min**. The customer's tracking page updates, with a new promised time and a demo WhatsApp message.
-4. Continue through **Mark ready**, **Handed to rider**, and **Mark delivered**. The customer gets a rating pop-up (optional) and earns points.
-5. On the tracking page, tap **Something wrong with your order?** and send a complaint. Open **Customer issues** as the kitchen user and reply. The reply shows up on the customer's page.
-6. As admin, open **Dashboard** (orders, average prep time, cancellations and repeat customers per outlet) and **Issues** (separate view per outlet).
-
-### Test payment inputs
-
-| Method | Input | Result |
-|---|---|---|
-| Card | `4111 1111 1111 1111` | Succeeds |
-| Card | `4000 0000 0000 0002` | Declined |
-| UPI | Any valid ID such as `name@bank` | Succeeds |
-| UPI | ID starting with `fail` | Declined |
-
----
+1. As **customer**: pick an outlet (try "Use my location" or a demo area), add a biryani with **Customise** (portion and add-ons), open the cart, apply `DARBAAR10`, choose a payment method (card `4111 1111 1111 1111` succeeds, `4000 0000 0000 0002` is declined), and place the order. Scratch the reward card.
+2. In a second window as **kitchen@demo.com**: the order appears live. Tap **Accept & start**, then **+5 min**, then **Mark ready**, **Handed to rider** and **Mark delivered**. The customer page and the bell update live.
+3. As **customer**: open **Party**, send a request (at least 48 hours ahead, 10 or more guests).
+4. As **admin**: the bell and the **Party orders** badge show it. Confirm it with a message and use the Call and WhatsApp buttons. Then try **Add items**, pause an item per outlet on **Menu & stock**, and open the **Dashboard**.
+5. Note: a kitchen account only sees its own outlet. An order placed at Kukatpally will not show for kitchen@demo.com.
 
 ## 2. Run it locally
 
-**Prerequisites:** Node.js 20 or newer, Git, and a free [Supabase](https://supabase.com) project.
+Requirements: Node.js 20 or newer, Git, and a free Supabase project.
 
-```bash
-# 1. Clone
-git clone https://github.com/ajrocks-afk/biryani-darbaar.git
-cd biryani-darbaar
+1. Clone and install:
+   ```bash
+   git clone https://github.com/ajrocks-afk/biryani-darbaar.git
+   cd biryani-darbaar
+   npm install
+   ```
+2. Create a project at supabase.com (free tier).
+3. Open **SQL Editor** and run these files from the `supabase/` folder, **one file at a time, in this order**:
+   1. `schema.sql` (tables)
+   2. `seed.sql` (outlets, menu, prices, coupons, sample orders)
+   3. `features.sql` (loyalty, support tickets, ratings, notifications log, sign-up trigger)
+   4. `features2.sql` (party orders, menu CMS functions, outlet phone numbers)
+   5. `features3.sql` (in-app notification inbox, cancel-order function)
+   6. `rls.sql` (Row Level Security policies and the Realtime publication)
+   7. Optional: `demo_history.sql`, if present, adds past orders so the dashboard has data.
 
-# 2. Install
-npm install
+   If the editor rejects a file with several statements, paste and run it in smaller parts.
+   If a line says a policy, trigger or table "already exists", it is safe to ignore.
+4. Create the demo users: **Authentication → Users → Add user → Create new user**, with **Auto Confirm User** ticked and the password `Darbaar@123`, for these five emails: `customer@demo.com`, `kitchen@demo.com`, `kitchen2@demo.com`, `kitchen3@demo.com`, `admin@demo.com`.
+5. Give them their roles (run as one query after the users exist):
+   ```sql
+   insert into profiles (id, full_name, role, outlet_id)
+   select id, 'Demo Customer', 'customer', null from auth.users where email = 'customer@demo.com'
+   on conflict (id) do update set role = 'customer', outlet_id = null;
 
-# 3. Create your environment file
-cp .env.example .env.local        # on Windows PowerShell: Copy-Item .env.example .env.local
-```
+   insert into profiles (id, full_name, role, outlet_id)
+   select id, 'Demo Admin', 'admin', null from auth.users where email = 'admin@demo.com'
+   on conflict (id) do update set role = 'admin', outlet_id = null;
 
-Open `.env.local` and fill in the three values from your Supabase project (**Project Settings → API**). See section 3.
+   insert into profiles (id, full_name, role, outlet_id)
+   select id, 'Kondapur Kitchen', 'kitchen', (select id from outlets where name = 'Kondapur')
+   from auth.users where email = 'kitchen@demo.com'
+   on conflict (id) do update set role = 'kitchen', outlet_id = excluded.outlet_id;
 
-Then set up the database (section 4), and run:
+   insert into profiles (id, full_name, role, outlet_id)
+   select id, 'Kukatpally Kitchen', 'kitchen', (select id from outlets where name = 'Kukatpally')
+   from auth.users where email = 'kitchen2@demo.com'
+   on conflict (id) do update set role = 'kitchen', outlet_id = excluded.outlet_id;
 
-```bash
-npm run dev       # http://localhost:3000
-npm test          # unit tests (Vitest)
-npm run build     # production build, includes the type check
-```
+   insert into profiles (id, full_name, role, outlet_id)
+   select id, 'Gachibowli Kitchen', 'kitchen', (select id from outlets where name = 'Gachibowli Cloud Kitchen')
+   from auth.users where email = 'kitchen3@demo.com'
+   on conflict (id) do update set role = 'kitchen', outlet_id = excluded.outlet_id;
+   ```
+6. Copy `.env.example` to `.env.local` and fill in the three values (Supabase **Project Settings → API**). See section 4.
+7. Start the app and open http://localhost:3000:
+   ```bash
+   npm run dev
+   ```
+8. Run the unit tests and a production build:
+   ```bash
+   npm test
+   npm run build
+   ```
 
----
+Food photos are static files in `public/food/` and are linked by the `photo_url` column. If a photo is missing, the menu shows a placeholder.
 
-## 3. Environment variables
+## 3. How it is deployed
 
-Names only. Never commit values. `.env.local` is git-ignored, and `.env.example` lists the names.
+- **App:** Next.js on Vercel (free Hobby plan), deployed from the GitHub repo. Every push to `main` redeploys.
+- **Database, auth and realtime:** Supabase (hosted Postgres).
+- **Steps used:** import the repo in Vercel, add the three environment variables, deploy. In Supabase, **Authentication → URL Configuration**, add the Vercel URL as the Site URL.
 
-| Name | Where it is used | Notes |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser and server | Public key. Protected by Row Level Security |
-| `SUPABASE_SERVICE_ROLE_KEY` | **Server only** | Bypasses Row Level Security. Used only in server actions, after the caller's role is checked. Never exposed to the browser |
+## 4. Environment variables (names only)
 
----
+| Name | Used where |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser and server. Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser and server. Supabase public (anon) key, which is safe to expose because Row Level Security protects the data |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Server only** (server actions that place orders and validate coupons). Never sent to the browser and never committed |
 
-## 4. Database setup (Supabase)
+`.env.local` is git-ignored. Only `.env.example` (names, no values) is in the repo.
 
-1. **Create a project** at supabase.com.
-2. **Run the SQL** in `supabase/` using the SQL Editor, one file per query, in this order: `schema.sql`, `seed.sql`, `features.sql`, `rls.sql`, then (optional) `demo_history.sql`.
-3. **Create the demo users** under **Authentication → Users → Add user**, with "Auto Confirm User" ticked and password `Darbaar@123`:
-   `customer@demo.com`, `kitchen@demo.com`, `kitchen2@demo.com`, `kitchen3@demo.com`, `admin@demo.com`.
-   Then run the `profiles` insert statements at the bottom of `seed.sql`, which assign each user a role and an outlet.
-4. **Authentication settings** (Authentication → Sign In / Providers → Email): turn **Confirm email off** so new sign-ups can order immediately. This is a demo choice (see Limits).
-5. **Realtime:** the `orders` table must be in the `supabase_realtime` publication so the kitchen screen and tracking page update live.
-6. **Photos:** food photos are in `public/food/`. File names must match the database exactly, because Vercel is case-sensitive.
+## 5. Security summary
 
----
+- Row Level Security is enabled on every table. Policies are in `supabase/rls.sql` and `features*.sql`.
+- Customers read only their own orders, tickets, party requests and notifications. Kitchen accounts read and update only their own outlet's orders. Admin manages the menu and party requests.
+- Orders are created only by a server action. It verifies the caller's login token, requires the customer role, and re-reads prices, option prices, coupons, serving times and loyalty points from the database instead of trusting the browser.
+- Writes such as party requests, tickets, ratings, cancellation and menu items go through database functions that check the caller's role.
+- Inputs are validated in the browser and again on the server or in the database.
 
-## 5. How it is deployed
+## 6. Assumptions (also listed in the TDD)
 
-- **Hosting:** Vercel (free Hobby plan), connected to the GitHub repository. Every push to `main` builds and deploys automatically.
-- **Database and auth:** one hosted Supabase project, used by both local development and the live app.
-- **Vercel setup:**
-  1. Import the GitHub repo as a new project (framework: Next.js, default build settings).
-  2. Add the three environment variables from section 3 under **Settings → Environment Variables**.
-  3. Deploy. To redeploy after changing a variable: **Deployments → ⋯ → Redeploy**.
-- **Supabase URL settings** (Authentication → URL Configuration): Site URL is the Vercel URL, and Redirect URLs include `https://biryani-darbaar-cvrm.vercel.app/**` and `http://localhost:3000/**`.
-
----
-
-## 6. Security summary
-
-- No secrets in the repository. `.env.local` is ignored and only `.env.example` (names) is committed.
-- **Row Level Security** is on for all tables. The `profiles` table has a read-own-row policy only, so users cannot change their own role.
-- New accounts are always created as `customer` by a database trigger. Staff accounts can only be created by an admin through a server action that verifies the caller's role.
-- Prices, totals, discounts and loyalty redemption are **recalculated on the server** and never trusted from the browser.
-- Help requests and ratings are written through database functions that take the outlet from the customer's own order, so they cannot be pointed at another outlet.
-- Inputs are validated on the server (quantities, coupon codes, payment method, text lengths).
-- Marketing messages are opt-in. The sign-up checkbox is unticked by default, and consent is stored with a timestamp.
-
----
+- Payments are a simulated gateway (test mode). Card details never leave the browser and are not stored. Only the method and a label such as "Card •• 1111" are saved.
+- WhatsApp and SMS messages are mocked: they are written to a log that the customer sees on the tracking page.
+- The prep-time estimate is a transparent load-based formula with constants I chose, not a trained model. Promised time is the higher of the estimate and the outlet minimum.
+- Loyalty rates (1 point per Rs 20, 1 point = Rs 1, Silver and Gold multipliers), scratch-card prize odds, coupon values, the 48-hour party notice and the 10 to 500 guest range are my own assumptions. The client should confirm them.
+- The admin account acts as the catering manager. Delivery is by a partner rider (out of scope): kitchen staff mark an order delivered.
+- Outlet coordinates, FSSAI numbers and phone numbers are fictional. Food photos are free-licence images.
+- Seeded sample order totals come from the brief and do not add up exactly to their line items.
 
 ## 7. Known limits
 
-- Payments are a **mock gateway** (test mode only). WhatsApp and SMS messages are **simulated**: they appear as "demo WhatsApp" messages in the order page and are logged in the database.
-- Email confirmation is switched off to keep the demo friction-free.
-- Kitchen staff can update any column of their own outlet's orders (a known trade-off, noted in the TDD).
-- The 1,200 orders per hour peak has **not been load tested**.
-- The complaint assistant is a rule-based guided form, not an AI model.
-- Dashboard history before today's demo is synthetic.
-
----
-
-## 8. Troubleshooting
-
-| Problem | Fix |
-|---|---|
-| Some food photos missing on the live site | File names in `public/food/` must match the database exactly, including capital letters |
-| "Could not place order" | `SUPABASE_SERVICE_ROLE_KEY` is missing or mistyped. Fix it in Vercel, then redeploy |
-| Login redirects wrongly | Hard refresh (Ctrl+Shift+R) or use a private window. Check the Supabase URL settings in section 5 |
-| Kitchen board does not update live | Check that `orders` is in the Realtime publication. The page also refreshes every 10 seconds as a fallback |
-| Build fails on a missing module | Run `npm install` and commit `package.json` and `package-lock.json` |
+- The 1,200 orders per hour peak and the median checkout under 60 seconds were **not load-tested or measured**.
+- Access tokens are passed to server actions as arguments. Cookie-based sessions (`@supabase/ssr`) would be better.
+- Kitchen staff can update any column of their outlet's orders. A database trigger that allows only valid status transitions is the next step.
+- The delivery radius is checked when choosing an outlet, not again at checkout. Orders go to the outlet the customer picks. They are not auto-assigned.
+- Only the Hyderabad price row exists. The table supports other cities, but the admin screen does not edit them yet.
+- Existing dishes can have price, stock, photo and serving window edited, but not name or description.
+- Notifications are in-app only (no push, email or SMS), and the first-time guide is remembered per browser.
